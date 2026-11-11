@@ -1,0 +1,8 @@
+[package]
+name = "realm-core"
+version.workspace = true
+edition.workspace = true
+description = "Motor de simulación independiente de Retro Realm"
+publish = false
+
+[dependencies]
