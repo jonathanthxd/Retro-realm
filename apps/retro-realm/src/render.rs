@@ -826,4 +826,7 @@ pub fn draw_pause(vw: f32,audio_enabled:bool) {
         12.0,
         rgb(215, 231, 255),
     );
+    draw_rectangle(vw/2.0-65.0,134.0,130.0,24.0,rgb(26,49,84));
+    centered(if audio_enabled {"AUDIO: ON"}else{"AUDIO: OFF"},
+        vw/2.0,150.0,12.0,WHITE);
 }
