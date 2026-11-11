@@ -183,11 +183,18 @@ fn hero(
     }
 }
 
+fn terrain_hash(a:usize)->u32 {
+    // Traducción bit-a-bit del hs(col) del Canvas original.
+    let mut h=(a as i32).wrapping_mul(374_761_393) ^ 0x5bd1e995;
+    h=(h^(h>>13)).wrapping_mul(1_274_126_177);
+    (h^(h>>16)) as u32
+}
 fn terrain(w: &World, vw: f32, cam: f32, assets: &Assets) {
     let min = (cam / 16.0).floor() as usize;
     let max = ((cam + vw) / 16.0).ceil() as usize;
     let dark = w.map == MapId::DarkForest;
     for i in min..max.min(320) {
+        let pattern=terrain_hash(i);
         let x = i as f32 * 16.0 - cam;
         let y = w.terrain[i];
         draw_rectangle(
@@ -215,8 +222,14 @@ fn terrain(w: &World, vw: f32, cam: f32, assets: &Assets) {
                 },
             );
         }
-        if let Some(tile) = assets.soil(i % 4, dark) {
-            for yy in ((y / 16.0) as i32 + 1)..12 {
+        if let Some(tile) = assets.soil((pattern as usize >> 2) % 4, dark) {
+            // Cada capa bajo tierra utiliza un patrón diferente.
+            // La textura de cada fila se selecciona abajo por hs(col)+profundidad.
+            let _=tile;
+        }
+        for yy in ((y / 16.0) as i32 + 1)..14 {
+            let row=yy-((y/16.0) as i32);
+            if let Some(tile)=assets.soil((((pattern >> 2) as usize)+row as usize)&3,dark){
                 draw_texture_ex(
                     tile,
                     x,
@@ -226,13 +239,12 @@ fn terrain(w: &World, vw: f32, cam: f32, assets: &Assets) {
                 );
                 // zTerrain original oscurece la tierra con la profundidad:
                 // alpha = min(.6, .1 + r*.14), r empieza en 1.
-                let row=yy - ((y / 16.0) as i32);
                 let shade=(0.1+row as f32*0.14).min(0.6);
                 draw_rectangle(x,yy as f32*16.0,16.0,16.0,
                     rgba(2,6,12,(shade*255.0) as u8));
             }
         }
-        if let Some(tile) = assets.grass(i % 4, dark) {
+        if let Some(tile) = assets.grass((pattern & 3) as usize, dark) {
             draw_texture_ex(tile, x, y, WHITE, DrawTextureParams::default());
         } else {
             draw_rectangle(
