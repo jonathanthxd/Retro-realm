@@ -33,5 +33,15 @@ jobs:
           git add apps/retro-realm/assets/sprites/
           if ! git diff --cached --quiet; then
             git commit -m "assets: export original Canvas sprite PNGs for Macroquad"
-            git push origin HEAD:refactor/rust-macroquad-migration
+            # El código fuente puede avanzar mientras Playwright exporta: rebase
+            # antes del push evita rechazos por un HEAD antiguo.
+            for attempt in 1 2 3; do
+              git fetch origin refactor/rust-macroquad-migration
+              git rebase origin/refactor/rust-macroquad-migration
+              if git push origin HEAD:refactor/rust-macroquad-migration; then
+                exit 0
+              fi
+              sleep 2
+            done
+            exit 1
           fi
