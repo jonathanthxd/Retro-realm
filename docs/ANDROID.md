@@ -39,6 +39,14 @@ las opciones actuales del workspace.
 según la versión de Cargo/Android NDK; no prometer un APK funcional hasta
 que CI lo construya y un teléfono real lo ejecute.
 
-El identificador Android se mantiene \`com.pixelquest.game\`, pero instalar
-un APK de firma diferente sobre el original puede fallar o provocar pérdida
-de ajustes: probar en un entorno separado, sin desinstalar el juego anterior.
+Por seguridad el APK de pruebas utiliza el identificador aislado
+\`com.pixelquest.game.preview\`: se instala **al lado del original** y
+no sobrescribe datos del juego WebView. Solo cuando se confirme paridad
+se decidirá cómo migrar el identificador y los datos del juego original.
+
+## Prueba automática en emulador
+
+El workflow intenta instalar el APK en Android 14 (API 34), abrir
+\`com.pixelquest.game.preview/.MainActivity\`, comprobar que el proceso
+permanece vivo y guardar captura y logcat como artefactos. Una captura
+no sustituye las pruebas de controles, audio y FPS en teléfonos reales.

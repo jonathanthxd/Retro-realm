@@ -22,6 +22,7 @@ cargo run -p retro-realm
 cargo test -p realm-core
 \`\`\`
 
-La versión Android nativa se empaquetará con \`cargo-quad-apk\` una vez probada la compatibilidad del renderizador y del audio. La versión WebView original **no ha sido sustituida**.
+El workflow \`.github/workflows/rust-android.yml\` genera APKs nativos
+experimentales y trata de validarlos en un emulador Android. La versión WebView original **no ha sido sustituida**.
 
 > Licencia: el repositorio original no declara una licencia de redistribución. No se concede ninguna licencia nueva sobre el código ni sobre los recursos del autor original mediante esta migración.

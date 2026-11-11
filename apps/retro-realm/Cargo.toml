@@ -13,7 +13,7 @@ realm-core = { path = "../../crates/realm-core" }
 android_version = 35
 build_targets = ["aarch64-linux-android", "x86_64-linux-android"]
 fullscreen = true
-package_name = "com.pixelquest.game"
+package_name = "com.pixelquest.game.preview"
 label = "Retro Realm"
 version_code = 3
 min_sdk_version = 21
