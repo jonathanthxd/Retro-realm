@@ -42,6 +42,7 @@ pub struct Assets {
     portraits: [Option<Texture2D>; 3],
     ui_icons: HashMap<(String, usize), Texture2D>,
     clouds: Vec<Cloud>,
+    font_atlas: Option<Texture2D>,
 }
 
 async fn texture(name: String) -> Option<Texture2D> {
@@ -74,6 +75,7 @@ impl Assets {
             portraits: std::array::from_fn(|_| None),
             ui_icons: HashMap::new(),
             clouds: Vec::new(),
+            font_atlas: None,
         };
         for class in 0..3 {
             for phase in 0..9 {
@@ -135,6 +137,7 @@ impl Assets {
         for i in 0..2 {
             result.chests[i] = texture(format!("chest_{}", i)).await;
         }
+        result.font_atlas=texture("ui_font_atlas".to_string()).await;
         for cl in 0..3 {
             result.portraits[cl] = texture(format!("ui_portrait_{}",cl)).await;
             for id in ["s0","s1","s2","s3","bj","bm","bl","br"] {
@@ -203,6 +206,7 @@ impl Assets {
         }
         result
     }
+    pub fn font_atlas(&self)->Option<&Texture2D> {self.font_atlas.as_ref()}
     pub fn clouds(&self)->&[Cloud] {&self.clouds}
     pub fn scene(&self,key:&str)->Option<&Texture2D> {
         self.scene_layers.get(key)
