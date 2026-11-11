@@ -442,5 +442,1205 @@
     "height": 16,
     "ax": 0,
     "ay": 0
+  },
+  "enemy_20_0": {
+    "width": 38,
+    "height": 32,
+    "ax": 19,
+    "ay": 31
+  },
+  "enemy_20_1": {
+    "width": 38,
+    "height": 32,
+    "ax": 19,
+    "ay": 31
+  },
+  "enemy_21_0": {
+    "width": 38,
+    "height": 32,
+    "ax": 19,
+    "ay": 31
+  },
+  "enemy_21_1": {
+    "width": 38,
+    "height": 32,
+    "ax": 19,
+    "ay": 31
+  },
+  "enemy_22_0": {
+    "width": 38,
+    "height": 32,
+    "ax": 19,
+    "ay": 31
+  },
+  "enemy_22_1": {
+    "width": 38,
+    "height": 32,
+    "ax": 19,
+    "ay": 31
+  },
+  "enemy_23_0": {
+    "width": 38,
+    "height": 32,
+    "ax": 19,
+    "ay": 31
+  },
+  "enemy_23_1": {
+    "width": 38,
+    "height": 32,
+    "ax": 19,
+    "ay": 31
+  },
+  "enemy_24_0": {
+    "width": 38,
+    "height": 32,
+    "ax": 19,
+    "ay": 31
+  },
+  "enemy_24_1": {
+    "width": 38,
+    "height": 32,
+    "ax": 19,
+    "ay": 31
+  },
+  "enemy_25_0": {
+    "width": 38,
+    "height": 32,
+    "ax": 19,
+    "ay": 31
+  },
+  "enemy_25_1": {
+    "width": 38,
+    "height": 32,
+    "ax": 19,
+    "ay": 31
+  },
+  "enemy_26_0": {
+    "width": 38,
+    "height": 32,
+    "ax": 19,
+    "ay": 31
+  },
+  "enemy_26_1": {
+    "width": 38,
+    "height": 32,
+    "ax": 19,
+    "ay": 31
+  },
+  "enemy_27_0": {
+    "width": 38,
+    "height": 32,
+    "ax": 19,
+    "ay": 31
+  },
+  "enemy_27_1": {
+    "width": 38,
+    "height": 32,
+    "ax": 19,
+    "ay": 31
+  },
+  "enemy_28_0": {
+    "width": 38,
+    "height": 32,
+    "ax": 19,
+    "ay": 31
+  },
+  "enemy_28_1": {
+    "width": 38,
+    "height": 32,
+    "ax": 19,
+    "ay": 31
+  },
+  "enemy_29_0": {
+    "width": 38,
+    "height": 32,
+    "ax": 19,
+    "ay": 31
+  },
+  "enemy_29_1": {
+    "width": 38,
+    "height": 32,
+    "ax": 19,
+    "ay": 31
+  },
+  "enemy_30_0": {
+    "width": 38,
+    "height": 32,
+    "ax": 19,
+    "ay": 31
+  },
+  "enemy_30_1": {
+    "width": 38,
+    "height": 32,
+    "ax": 19,
+    "ay": 31
+  },
+  "enemy_31_0": {
+    "width": 38,
+    "height": 32,
+    "ax": 19,
+    "ay": 31
+  },
+  "enemy_31_1": {
+    "width": 38,
+    "height": 32,
+    "ax": 19,
+    "ay": 31
+  },
+  "enemy_32_0": {
+    "width": 38,
+    "height": 32,
+    "ax": 19,
+    "ay": 31
+  },
+  "enemy_32_1": {
+    "width": 38,
+    "height": 32,
+    "ax": 19,
+    "ay": 31
+  },
+  "enemy_33_0": {
+    "width": 38,
+    "height": 32,
+    "ax": 19,
+    "ay": 31
+  },
+  "enemy_33_1": {
+    "width": 38,
+    "height": 32,
+    "ax": 19,
+    "ay": 31
+  },
+  "enemy_34_0": {
+    "width": 38,
+    "height": 32,
+    "ax": 19,
+    "ay": 31
+  },
+  "enemy_34_1": {
+    "width": 38,
+    "height": 32,
+    "ax": 19,
+    "ay": 31
+  },
+  "enemy_35_0": {
+    "width": 38,
+    "height": 32,
+    "ax": 19,
+    "ay": 31
+  },
+  "enemy_35_1": {
+    "width": 38,
+    "height": 32,
+    "ax": 19,
+    "ay": 31
+  },
+  "enemy_36_0": {
+    "width": 38,
+    "height": 32,
+    "ax": 19,
+    "ay": 31
+  },
+  "enemy_36_1": {
+    "width": 38,
+    "height": 32,
+    "ax": 19,
+    "ay": 31
+  },
+  "enemy_37_0": {
+    "width": 38,
+    "height": 32,
+    "ax": 19,
+    "ay": 31
+  },
+  "enemy_37_1": {
+    "width": 38,
+    "height": 32,
+    "ax": 19,
+    "ay": 31
+  },
+  "enemy_60_0": {
+    "width": 66,
+    "height": 68,
+    "ax": 33,
+    "ay": 67
+  },
+  "enemy_60_1": {
+    "width": 66,
+    "height": 68,
+    "ax": 33,
+    "ay": 67
+  },
+  "enemy_60_2": {
+    "width": 66,
+    "height": 68,
+    "ax": 33,
+    "ay": 67
+  },
+  "enemy_60_3": {
+    "width": 66,
+    "height": 68,
+    "ax": 33,
+    "ay": 67
+  },
+  "ogre_60_a": {
+    "width": 66,
+    "height": 68,
+    "ax": 33,
+    "ay": 67
+  },
+  "ogre_60_s": {
+    "width": 66,
+    "height": 68,
+    "ax": 33,
+    "ay": 67
+  },
+  "ogre_60_r": {
+    "width": 66,
+    "height": 68,
+    "ax": 33,
+    "ay": 67
+  },
+  "enemy_61_0": {
+    "width": 66,
+    "height": 68,
+    "ax": 33,
+    "ay": 67
+  },
+  "enemy_61_1": {
+    "width": 66,
+    "height": 68,
+    "ax": 33,
+    "ay": 67
+  },
+  "enemy_61_2": {
+    "width": 66,
+    "height": 68,
+    "ax": 33,
+    "ay": 67
+  },
+  "enemy_61_3": {
+    "width": 66,
+    "height": 68,
+    "ax": 33,
+    "ay": 67
+  },
+  "ogre_61_a": {
+    "width": 66,
+    "height": 68,
+    "ax": 33,
+    "ay": 67
+  },
+  "ogre_61_s": {
+    "width": 66,
+    "height": 68,
+    "ax": 33,
+    "ay": 67
+  },
+  "ogre_61_r": {
+    "width": 66,
+    "height": 68,
+    "ax": 33,
+    "ay": 67
+  },
+  "enemy_40_0": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_40_1": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_40_2": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_40_3": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_40_4": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_40_5": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_40_6": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_40_7": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_40_8": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "humanoid_attack_40_0": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "humanoid_attack_40_1": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "humanoid_attack_40_2": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_41_0": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_41_1": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_41_2": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_41_3": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_41_4": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_41_5": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_41_6": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_41_7": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_41_8": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "humanoid_attack_41_0": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "humanoid_attack_41_1": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "humanoid_attack_41_2": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_42_0": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_42_1": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_42_2": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_42_3": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_42_4": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_42_5": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_42_6": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_42_7": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_42_8": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "humanoid_attack_42_0": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "humanoid_attack_42_1": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "humanoid_attack_42_2": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_43_0": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_43_1": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_43_2": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_43_3": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_43_4": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_43_5": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_43_6": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_43_7": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_43_8": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "humanoid_attack_43_0": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "humanoid_attack_43_1": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "humanoid_attack_43_2": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_44_0": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_44_1": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_44_2": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_44_3": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_44_4": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_44_5": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_44_6": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_44_7": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_44_8": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "humanoid_attack_44_0": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "humanoid_attack_44_1": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "humanoid_attack_44_2": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_45_0": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_45_1": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_45_2": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_45_3": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_45_4": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_45_5": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_45_6": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_45_7": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_45_8": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "humanoid_attack_45_0": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "humanoid_attack_45_1": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "humanoid_attack_45_2": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_46_0": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_46_1": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_46_2": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_46_3": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_46_4": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_46_5": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_46_6": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_46_7": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_46_8": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "humanoid_attack_46_0": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "humanoid_attack_46_1": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "humanoid_attack_46_2": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_47_0": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_47_1": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_47_2": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_47_3": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_47_4": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_47_5": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_47_6": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_47_7": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_47_8": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "humanoid_attack_47_0": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "humanoid_attack_47_1": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "humanoid_attack_47_2": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_48_0": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_48_1": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_48_2": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_48_3": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_48_4": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_48_5": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_48_6": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_48_7": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_48_8": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "humanoid_attack_48_0": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "humanoid_attack_48_1": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "humanoid_attack_48_2": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_49_0": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_49_1": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_49_2": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_49_3": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_49_4": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_49_5": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_49_6": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_49_7": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "enemy_49_8": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "humanoid_attack_49_0": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "humanoid_attack_49_1": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "humanoid_attack_49_2": {
+    "width": 48,
+    "height": 52,
+    "ax": 24,
+    "ay": 51
+  },
+  "king_i_0": {
+    "width": 88,
+    "height": 68,
+    "ax": 31,
+    "ay": 65
+  },
+  "king_i_1": {
+    "width": 88,
+    "height": 68,
+    "ax": 31,
+    "ay": 65
+  },
+  "king_w_0": {
+    "width": 88,
+    "height": 68,
+    "ax": 31,
+    "ay": 65
+  },
+  "king_w_1": {
+    "width": 88,
+    "height": 68,
+    "ax": 31,
+    "ay": 65
+  },
+  "king_w_2": {
+    "width": 88,
+    "height": 68,
+    "ax": 31,
+    "ay": 65
+  },
+  "king_w_3": {
+    "width": 88,
+    "height": 68,
+    "ax": 31,
+    "ay": 65
+  },
+  "king_s1_0": {
+    "width": 88,
+    "height": 68,
+    "ax": 31,
+    "ay": 65
+  },
+  "king_s1_1": {
+    "width": 88,
+    "height": 68,
+    "ax": 31,
+    "ay": 65
+  },
+  "king_s2_0": {
+    "width": 88,
+    "height": 68,
+    "ax": 31,
+    "ay": 65
+  },
+  "king_s2_1": {
+    "width": 88,
+    "height": 68,
+    "ax": 31,
+    "ay": 65
+  },
+  "king_s3_0": {
+    "width": 88,
+    "height": 68,
+    "ax": 31,
+    "ay": 65
+  },
+  "king_s3_1": {
+    "width": 88,
+    "height": 68,
+    "ax": 31,
+    "ay": 65
+  },
+  "king_a_0": {
+    "width": 88,
+    "height": 68,
+    "ax": 31,
+    "ay": 65
+  },
+  "king_a_1": {
+    "width": 88,
+    "height": 68,
+    "ax": 31,
+    "ay": 65
+  },
+  "king_j_0": {
+    "width": 88,
+    "height": 68,
+    "ax": 31,
+    "ay": 65
+  },
+  "king_j_1": {
+    "width": 88,
+    "height": 68,
+    "ax": 31,
+    "ay": 65
+  },
+  "king_f_0": {
+    "width": 88,
+    "height": 68,
+    "ax": 31,
+    "ay": 65
+  },
+  "king_f_1": {
+    "width": 88,
+    "height": 68,
+    "ax": 31,
+    "ay": 65
+  },
+  "king_d_0": {
+    "width": 88,
+    "height": 68,
+    "ax": 31,
+    "ay": 65
+  },
+  "king_d_1": {
+    "width": 88,
+    "height": 68,
+    "ax": 31,
+    "ay": 65
+  },
+  "king_sl_0": {
+    "width": 88,
+    "height": 68,
+    "ax": 31,
+    "ay": 65
+  },
+  "king_sl_1": {
+    "width": 88,
+    "height": 68,
+    "ax": 31,
+    "ay": 65
+  },
+  "dark_grass_0": {
+    "width": 16,
+    "height": 16,
+    "ax": 0,
+    "ay": 0
+  },
+  "dark_soil_0": {
+    "width": 16,
+    "height": 16,
+    "ax": 0,
+    "ay": 0
+  },
+  "dark_grass_1": {
+    "width": 16,
+    "height": 16,
+    "ax": 0,
+    "ay": 0
+  },
+  "dark_soil_1": {
+    "width": 16,
+    "height": 16,
+    "ax": 0,
+    "ay": 0
+  },
+  "dark_grass_2": {
+    "width": 16,
+    "height": 16,
+    "ax": 0,
+    "ay": 0
+  },
+  "dark_soil_2": {
+    "width": 16,
+    "height": 16,
+    "ax": 0,
+    "ay": 0
+  },
+  "dark_grass_3": {
+    "width": 16,
+    "height": 16,
+    "ax": 0,
+    "ay": 0
+  },
+  "dark_soil_3": {
+    "width": 16,
+    "height": 16,
+    "ax": 0,
+    "ay": 0
   }
 }
