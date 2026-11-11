@@ -1,4 +1,5 @@
 //! Aplicación nativa, sin WebView. El núcleo \`realm-core\` sigue siendo puro Rust.
+mod assets;
 mod controls;
 mod render;
 
@@ -52,6 +53,7 @@ impl Music {
 #[macroquad::main(config)]
 async fn main() {
     macroquad::file::set_pc_assets_folder("apps/retro-realm/assets");
+    let assets=assets::Assets::load().await;
     let mut music=Music::load().await;
     let mut chosen=HeroClass::LunarMage;
     let mut world=World::new(chosen);
@@ -128,10 +130,10 @@ async fn main() {
         set_camera(&camera);
         clear_background(BLACK);
         match screen {
-            Screen::Home=>render::draw_home(virtual_width,chosen,world.player.level),
-            Screen::Playing=>render::draw_game(&world,virtual_width),
+            Screen::Home=>render::draw_home(virtual_width,chosen,world.player.level,&assets),
+            Screen::Playing=>render::draw_game(&world,virtual_width,&assets),
             Screen::Paused=>{
-                render::draw_game(&world,virtual_width);
+                render::draw_game(&world,virtual_width,&assets);
                 render::draw_pause(virtual_width);
             }
         }

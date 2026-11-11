@@ -1,6 +1,7 @@
 //! Renderizador pixel-art provisional. Se portarán sprites y shaders originales
 //! sin modificar la API de simulación ni sus parámetros.
 use macroquad::prelude::*;
+use crate::assets::Assets;
 use realm_core::{World,HeroClass,MapId,ProjectileKind,PickupKind,BossStage,TORCHES,WORLD_WIDTH};
 
 fn rgb(r:u8,g:u8,b:u8)->Color {Color::from_rgba(r,g,b,255)}
@@ -38,7 +39,7 @@ pub fn buttons(vw:f32)->[Button;10]{
 fn hero_color(c:HeroClass)->Color {
     let [r,g,b]=c.color();rgb(r,g,b)
 }
-fn hero(x:f32,y:f32,c:HeroClass,dir:f32,time:u64,shield:bool,dash:bool) {
+fn hero(x:f32,y:f32,c:HeroClass,dir:f32,time:u64,shield:bool,dash:bool,moving:bool,attack:bool,assets:&Assets) {
     let accent=hero_color(c);
     let anim=(time/7%2) as f32;
     let foot=y-1.0;
@@ -47,28 +48,43 @@ fn hero(x:f32,y:f32,c:HeroClass,dir:f32,time:u64,shield:bool,dash:bool) {
         for i in 1..4 {draw_rectangle(x-dir*i as f32*7.0-6.0,y-24.0,12.0,20.0,
             rgba(39,224,232,(70/i) as u8));}
     }
-    // Silueta por bloques: temporal hasta importar el atlas exacto del Canvas JS.
-    draw_rectangle(x-6.0,y-19.0,12.0,14.0,accent);
-    draw_rectangle(x-5.0,y-27.0,10.0,9.0,rgb(232,210,196));
-    draw_rectangle(x-6.0,y-20.0,2.0,11.0,rgba(0,0,0,95));
-    draw_rectangle(x-4.0,y-5.0+(anim*1.0),4.0,5.0,rgb(35,37,65));
-    draw_rectangle(x+1.0,y-5.0-(anim*1.0),4.0,5.0,rgb(35,37,65));
-    draw_rectangle(x+3.0*dir,y-25.0,2.0,2.0,rgb(230,255,255));
-    match c {
-        HeroClass::LunarMage => {
-            draw_triangle(vec2(x-9.0,y-26.0),vec2(x+9.0,y-26.0),vec2(x,y-37.0),rgb(69,75,164));
-            draw_rectangle(x+dir*11.0,y-32.0,2.0,28.0,rgb(122,86,54));
-            draw_circle(x+dir*12.0,y-32.0,3.0,rgb(74,240,208));
-        }
-        HeroClass::Huntress => {
-            draw_rectangle(x-6.0,y-30.0,13.0,4.0,rgb(217,112,46));
-            draw_line(x+dir*9.0,y-21.0,x+dir*20.0,y-33.0,2.0,rgb(232,240,248));
-        }
-        HeroClass::CyberRaccoon => {
-            draw_triangle(vec2(x-5.0,y-25.0),vec2(x-10.0,y-36.0),vec2(x,y-30.0),rgb(70,80,100));
-            draw_triangle(vec2(x+5.0,y-25.0),vec2(x+10.0,y-36.0),vec2(x,y-30.0),rgb(70,80,100));
-            draw_rectangle(x-6.0,y-25.0,12.0,2.0,rgb(39,224,232));
-            draw_line(x+dir*7.0,y-17.0,x+dir*18.0,y-21.0,2.0,rgb(145,250,255));
+    let sprite=if attack {assets.hero_attack(c, (time/3 % 3) as usize)}
+        else {assets.hero(c,if moving {1+(time/7 % 8) as usize}else{0})};
+    if let Some(texture)=sprite {
+        // El Canvas original tiene punto de apoyo (18, 50) y tamaño 42x52.
+        let flipped=dir<0.0;
+        let anchor_x=if flipped {texture.width()-18.0}else{18.0};
+        draw_texture_ex(texture, x-anchor_x,y-50.0,WHITE,DrawTextureParams {
+            flip_x:flipped,
+            ..Default::default()
+        });
+    } else {
+        // Recurso ausente: silueta de depuración, no un sustituto del arte.
+        draw_rectangle(x-6.0,y-19.0,12.0,14.0,accent);
+        draw_rectangle(x-5.0,y-27.0,10.0,9.0,rgb(232,210,196));
+        draw_rectangle(x-6.0,y-20.0,2.0,11.0,rgba(0,0,0,95));
+        draw_rectangle(x-4.0,y-5.0+(anim*1.0),4.0,5.0,rgb(35,37,65));
+        draw_rectangle(x+1.0,y-5.0-(anim*1.0),4.0,5.0,rgb(35,37,65));
+        draw_rectangle(x+3.0*dir,y-25.0,2.0,2.0,rgb(230,255,255));
+        match c {
+            HeroClass::LunarMage => {
+                draw_triangle(vec2(x-9.0,y-26.0),vec2(x+9.0,y-26.0),
+                    vec2(x,y-37.0),rgb(69,75,164));
+                draw_rectangle(x+dir*11.0,y-32.0,2.0,28.0,rgb(122,86,54));
+                draw_circle(x+dir*12.0,y-32.0,3.0,rgb(74,240,208));
+            }
+            HeroClass::Huntress => {
+                draw_rectangle(x-6.0,y-30.0,13.0,4.0,rgb(217,112,46));
+                draw_line(x+dir*9.0,y-21.0,x+dir*20.0,y-33.0,2.0,rgb(232,240,248));
+            }
+            HeroClass::CyberRaccoon => {
+                draw_triangle(vec2(x-5.0,y-25.0),vec2(x-10.0,y-36.0),
+                    vec2(x,y-30.0),rgb(70,80,100));
+                draw_triangle(vec2(x+5.0,y-25.0),vec2(x+10.0,y-36.0),
+                    vec2(x,y-30.0),rgb(70,80,100));
+                draw_rectangle(x-6.0,y-25.0,12.0,2.0,rgb(39,224,232));
+                draw_line(x+dir*7.0,y-17.0,x+dir*18.0,y-21.0,2.0,rgb(145,250,255));
+            }
         }
     }
     if shield {
@@ -77,7 +93,7 @@ fn hero(x:f32,y:f32,c:HeroClass,dir:f32,time:u64,shield:bool,dash:bool) {
     }
 }
 
-fn terrain(w:&World,vw:f32,cam:f32){
+fn terrain(w:&World,vw:f32,cam:f32,assets:&Assets){
     let min=(cam/16.0).floor() as usize;
     let max=((cam+vw)/16.0).ceil() as usize;
     let dark=w.map==MapId::DarkForest;
@@ -88,8 +104,22 @@ fn terrain(w:&World,vw:f32,cam:f32){
             let cy=yy as f32*16.0;
             draw_rectangle(x+2.0,cy+2.0,12.0,1.0,if dark {rgb(51,47,79)}else{rgb(70,43,87)});
         }
-        draw_rectangle(x,y,16.0,3.0,if dark {rgb(103,171,154)}else{rgb(137,164,48)});
-        draw_rectangle(x,y+3.0,16.0,1.0,if dark {rgb(40,107,101)}else{rgb(91,128,35)});
+        // Primer paso: tiles originales capturados del Canvas del bosque 0.
+        if !dark {
+            if let Some(tile)=assets.soil(i%4) {
+                for yy in ((y/16.0) as i32+1)..12 {
+                    draw_texture_ex(tile,x,yy as f32*16.0,WHITE,DrawTextureParams::default());
+                }
+            }
+            if let Some(tile)=assets.grass(i%4) {
+                draw_texture_ex(tile,x,y,WHITE,DrawTextureParams::default());
+            } else {
+                draw_rectangle(x,y,16.0,3.0,rgb(137,164,48));
+            }
+        } else {
+            draw_rectangle(x,y,16.0,3.0,rgb(103,171,154));
+            draw_rectangle(x,y+3.0,16.0,1.0,rgb(40,107,101));
+        }
     }
 }
 fn background(w:&World,vw:f32,cam:f32){
@@ -157,7 +187,7 @@ fn portal(w:&World,x:f32,cam:f32,open:bool){
     draw_rectangle(sx-9.0,y-50.0,18.0,50.0,if open {rgb(35,132,146)} else {rgb(8,11,19)});
     if open {draw_circle(sx,y-25.0,6.0,rgb(74,240,216));}
 }
-fn enemy(e:&realm_core::Enemy,cam:f32,t:u64){
+fn enemy(e:&realm_core::Enemy,cam:f32,t:u64,assets:&Assets){
     let x=e.x-cam;let y=e.y;let scale=e.scale;
     let color=match e.kind {
         0|20..=39=>rgb(83,190,105),
@@ -167,6 +197,14 @@ fn enemy(e:&realm_core::Enemy,cam:f32,t:u64){
     };
     let width=if e.boss {28.0*scale}else{13.0*scale};
     let height=if e.boss {35.0*scale}else{20.0*scale};
+    if let Some(sprite)=assets.enemy(e.kind,(t/12%2) as usize) {
+        let sw=sprite.width()*scale;
+        let sh=sprite.height()*scale;
+        draw_texture_ex(sprite,x-sw/2.0,y-sh+scale,WHITE,DrawTextureParams {
+            dest_size:Some(vec2(sw,sh)),flip_x:e.facing<0.0,
+            ..Default::default()
+        });
+    } else {
     draw_ellipse(x,y+1.0,width*0.4,3.0,0.0,rgba(0,0,0,140));
     if e.kind==0 || (20..=39).contains(&e.kind) {
         draw_circle(x,y-height*0.5,width*0.55,color);
@@ -179,6 +217,7 @@ fn enemy(e:&realm_core::Enemy,cam:f32,t:u64){
         draw_rectangle(x+width*0.08,y-height*0.22,width*0.24,height*0.2,rgb(29,25,38));
         draw_rectangle(x+width*0.11,y-height*0.85,3.0,2.0,rgb(252,108,81));
         if e.kind==62 {draw_rectangle(x-width*0.5,y-height*1.1,width,5.0,rgb(216,176,80));}
+    }
     }
     let bar_y=y-height-6.0;
     draw_rectangle(x-width*0.5,bar_y,width,3.0,rgb(14,13,20));
@@ -231,10 +270,10 @@ fn game_hud(w:&World,vw:f32){
     }
     if w.message_ticks>0 {centered(&w.message,vw/2.0,57.0,15.0,rgb(250,202,99));}
 }
-pub fn draw_game(w:&World,vw:f32){
+pub fn draw_game(w:&World,vw:f32,assets:&Assets){
     let cam=(w.player.x-vw/2.0+w.player.facing*24.0).clamp(0.0,WORLD_WIDTH-vw);
     background(w,vw,cam);
-    terrain(w,vw,cam);
+    terrain(w,vw,cam,assets);
     props(w,vw,cam);
     for pickup in &w.pickups {
         let x=pickup.x-cam;
@@ -244,9 +283,10 @@ pub fn draw_game(w:&World,vw:f32){
         };
         draw_circle(x,pickup.y,3.0,color);
     }
-    for e in &w.enemies {if (e.x-cam).abs()<vw+50.0 {enemy(e,cam,w.tick);}}
+    for e in &w.enemies {if (e.x-cam).abs()<vw+50.0 {enemy(e,cam,w.tick,assets);}}
     hero(w.player.x-cam,w.player.y,w.player.class,w.player.facing,w.tick,
-        w.player.shield_ticks>0,w.player.dash_ticks>0);
+        w.player.shield_ticks>0,w.player.dash_ticks>0,w.player.moving,
+        w.player.melee_ticks>0,assets);
     for q in &w.projectiles {
         let color=match q.kind {
             ProjectileKind::Orb=>rgb(176,107,255),ProjectileKind::Knife=>rgb(235,240,255),
@@ -271,7 +311,7 @@ pub fn home_character_hit(p:Vec2,vw:f32)->Option<usize> {
 pub fn home_play_hit(p:Vec2,vw:f32)->bool {
     Rect::new(vw/2.0-62.0,132.0,124.0,30.0).contains(p)
 }
-pub fn draw_home(vw:f32,class:HeroClass,_level:u16){
+pub fn draw_home(vw:f32,class:HeroClass,_level:u16,assets:&Assets){
     for i in 0..22 {
         draw_rectangle(0.0,i as f32*9.0,vw,9.0,rgb((8+i/3) as u8,(14+i/2) as u8,(30+i) as u8));
     }
@@ -284,7 +324,7 @@ pub fn draw_home(vw:f32,class:HeroClass,_level:u16){
         panel(r.x,r.y,r.w,r.h);
         if class==chosen {draw_rectangle_lines(r.x,r.y,r.w,r.h,2.0,rgb(240,201,87));}
         let name=match i {0=>"MAGA LUNAR",1=>"CAZADORA",_=>"MAPACHE CYBER"};
-        hero(r.x+r.w/2.0,r.y+41.0,chosen,1.0,0,false,false);
+        hero(r.x+r.w/2.0,r.y+41.0,chosen,1.0,0,false,false,false,false,assets);
         centered(name,r.x+r.w/2.0,r.y+53.0,10.0,rgb(231,213,166));
     }
     draw_rectangle(vw/2.0-62.0,132.0,124.0,30.0,rgb(18,63,102));

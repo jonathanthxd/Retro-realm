@@ -55,7 +55,7 @@ pub struct Input {
 pub struct Player {
     pub class: HeroClass,
     pub x: f32, pub y: f32, pub vy: f32,
-    pub ground: bool, pub facing: f32,
+    pub ground: bool, pub facing: f32, pub moving: bool,
     pub hp: f32, pub max_hp: f32, pub mp: f32, pub max_mp: f32,
     pub level: u16, pub xp: u32, pub gold: u32, pub gems: u32,
     pub inv: u16, pub melee_ticks: u16, pub melee_cd: u16,
@@ -144,7 +144,7 @@ impl World {
         Self {
             terrain,
             player: Player { class, x: 60.0, y: start_y, vy: 0.0, ground: true,
-                facing: 1.0, hp: 60.0, max_hp: 60.0, mp: 100.0, max_mp: 100.0,
+                facing: 1.0, moving: false, hp: 60.0, max_hp: 60.0, mp: 100.0, max_mp: 100.0,
                 level: 1, xp: 0, gold: 0, gems: 0, inv: 0, melee_ticks: 0,
                 melee_cd: 0, cooldowns: [0; 4], dash_ticks: 0, shield_ticks: 0,
                 shield_cd: 0, extra_jump: true, jump_ticks: 99 },
@@ -513,6 +513,7 @@ impl World {
         }
         if input.melee {self.melee();}
         let movement=input.movement.clamp(-1.0,1.0);
+        self.player.moving=movement.abs()>0.1;
         if movement.abs()>0.1 {self.player.facing=movement.signum();}
         self.player.jump_ticks=self.player.jump_ticks.saturating_add(1);
         if self.player.ground {self.player.extra_jump=true;}
