@@ -120,6 +120,24 @@ try {
       g.drawImage(hero,8,0,24,26,2,4,60,62);
       add('ui_portrait_'+cl,portrait);
     }
+    // Atlas PNG del tipo RetroPx incrustado en el HTML, sin redistribuir WOFF/TTF.
+    // Reutiliza el rasterizado Canvas del navegador; 16 columnas x 8 filas.
+    await document.fonts.load('16px RetroPx');
+    const glyphs=Array.from({length:95},(_,i)=>String.fromCharCode(i+32))
+      .concat(Array.from('ÁÉÍÓÚÜÑáéíóúüñ¡¿'));
+    const cellW=18,cellH=20,cols=16;
+    const fontCanvas=document.createElement('canvas');
+    fontCanvas.width=cols*cellW;
+    fontCanvas.height=Math.ceil(glyphs.length/cols)*cellH;
+    const cg=fontCanvas.getContext('2d');
+    cg.fillStyle='#ffffff';
+    cg.font='16px RetroPx';
+    cg.textAlign='left';
+    cg.textBaseline='alphabetic';
+    glyphs.forEach((ch,i)=>{
+      cg.fillText(ch,(i%cols)*cellW+1,Math.floor(i/cols)*cellH+16);
+    });
+    add('ui_font_atlas',fontCanvas);
     // Pictogramas definitivos de los botones, tras aplicar CSS y clases del HTML.
     for(let cl=0;cl<3;cl++){
       p.cls=cl;icons();
