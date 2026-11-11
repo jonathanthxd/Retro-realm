@@ -42,7 +42,7 @@ jobs:
       - name: Convertir el audio original a OGG
         run: bash scripts/prepare-audio.sh
       - name: Instalar cargo-quad-apk compatible con Rust moderno
-        run: cargo +1.95.0 install --git https://github.com/hoklims/cargo-quad-apk --locked
+        run: cargo +1.95.0 install --git https://github.com/hoklims/cargo-quad-apk cargo-quad-apk --locked
       - name: Compilar APK nativo
         working-directory: apps/retro-realm
         run: cargo +1.95.0 quad-apk build --release

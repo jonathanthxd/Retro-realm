@@ -30,8 +30,10 @@ Se requiere \`ffmpeg\` instalado en PATH.
 El workflow \`.github/workflows/rust-android.yml\` intenta compilar un APK
 experimental Rust + Macroquad, separado del APK WebView anterior.
 
-Utiliza la imagen Docker \`notfl3/cargo-apk\` y \`cargo quad-apk build --release\` como indica
-la [guía oficial](https://macroquad.rs/articles/android/).
+Utiliza Rust 1.95 + Android NDK r28 y el fork actualizado de
+[hoklims/cargo-quad-apk](https://github.com/hoklims/cargo-quad-apk), puesto que
+la imagen Docker histórica del tutorial Macroquad trae Cargo 1.61 y no soporta
+las opciones actuales del workspace.
 
 **Nota:** la imagen y la herramienta Android de Macroquad pueden necesitar ajustes
 según la versión de Cargo/Android NDK; no prometer un APK funcional hasta

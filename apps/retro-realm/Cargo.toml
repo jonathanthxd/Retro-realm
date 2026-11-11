@@ -10,6 +10,9 @@ macroquad = { version = "=0.4.16", features = ["audio"] }
 realm-core = { path = "../../crates/realm-core" }
 
 [package.metadata.android]
+android_version = 35
+build_targets = ["aarch64-linux-android", "x86_64-linux-android"]
+fullscreen = true
 package_name = "com.pixelquest.game"
 label = "Retro Realm"
 version_code = 3
