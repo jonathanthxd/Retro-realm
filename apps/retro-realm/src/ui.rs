@@ -15,6 +15,33 @@ fn centered(s:&str,x:f32,y:f32,size:f32,color:Color){
     let width=measure_text(s,None,size as u16,1.0).width;
     txt(s,x-width/2.0,y,size,color);
 }
+// El HTML incrusta RetroPx en WOFF. Lo rasterizamos en PNG vía Canvas para
+// mantener su aspecto sin introducir dependencia de formatos de fuente.
+fn font_centered(assets:&Assets,s:&str,x:f32,baseline:f32,size:f32,color:Color) {
+    let Some(atlas)=assets.font_atlas() else {centered(s,x,baseline,size,color);return;};
+    let extra="ÁÉÍÓÚÜÑáéíóúüñ¡¿";
+    let adv=size*10.2/16.0;
+    let count=s.chars().count() as f32;
+    let mut left=x-count*adv/2.0;
+    let scale=size/16.0;
+    for ch in s.chars(){
+        let idx=if (32..127).contains(&(ch as u32)){
+            (ch as usize)-32
+        } else if let Some(j)=extra.chars().position(|c|c==ch) {
+            95+j
+        } else {
+            31 // '?' = ASCII 63 - 32
+        };
+        let col=(idx%16) as f32;
+        let row=(idx/16) as f32;
+        draw_texture_ex(atlas,left,baseline-16.0*scale,color,DrawTextureParams{
+            source:Some(Rect::new(col*18.0,row*20.0,18.0,20.0)),
+            dest_size:Some(vec2(18.0*scale,20.0*scale)),
+            ..Default::default()
+        });
+        left+=adv;
+    }
+}
 fn framed(x:f32,y:f32,w:f32,h:f32,selected:bool){
     let border=if selected{rgb(245,201,85)}else{rgb(139,134,152)};
     draw_rectangle(x+1.3,y+2.0,w,h,rgba(0,0,0,140));
@@ -27,10 +54,10 @@ fn framed(x:f32,y:f32,w:f32,h:f32,selected:bool){
         draw_rectangle_lines(x-2.0,y-2.0,w+4.0,h+4.0,0.7,rgba(255,224,117,155));
     }
 }
-fn button(x:f32,y:f32,w:f32,h:f32,title:&str) {
+fn button(x:f32,y:f32,w:f32,h:f32,title:&str,assets:&Assets) {
     framed(x,y,w,h,true);
     draw_rectangle(x+4.0,y+3.0,w-8.0,1.5,rgba(255,251,215,65));
-    centered(title,x+w/2.0,y+h*0.68,
+    font_centered(assets,title,x+w/2.0,y+h*0.68,
         if title.len()>10{7.0}else{9.5},rgb(249,233,186));
 }
 #[derive(Clone,Copy,PartialEq,Eq,Debug)]
@@ -61,22 +88,22 @@ pub fn draw_home(
     draw_rectangle_lines(3.2,3.2,vw-6.4,173.6,0.7,rgba(237,197,97,150));
     draw_rectangle_lines(5.0,5.0,vw-10.0,170.0,0.3,rgba(255,233,139,80));
     if page==HomePage::Landing{
-        centered("RETRO REALM",vw/2.0,15.3,13.0,rgb(250,215,111));
+        font_centered(assets,"RETRO REALM",vw/2.0,15.3,13.0,rgb(250,215,111));
         // La captura HTML utiliza un panel de ~237x43 px en 960x540.
         framed(vw/2.0-40.0,20.0,80.0,14.0,true);
-        centered(name,vw/2.0,29.8,7.4,rgb(244,236,215));
+        font_centered(assets,name,vw/2.0,29.8,7.4,rgb(244,236,215));
         framed(vw/2.0-13.2,36.4,26.4,8.8,true);
-        centered(&format!("NIVEL {}",level),vw/2.0,43.2,6.7,rgb(247,217,133));
+        font_centered(assets,&format!("NIVEL {}",level),vw/2.0,43.2,6.7,rgb(247,217,133));
         // Cuadro de héroe abajo a la izquierda, como HTML #hb.
         let r=home_hero_rect();
         framed(r.x,r.y,r.w,r.h,true);
         portrait(assets,hero,r.x+2.0,r.y+1.0,18.0,18.0);
-        centered("HÉROE",r.x+r.w/2.0,r.y+r.h+6.3,6.7,rgb(251,220,151));
+        font_centered(assets,"HÉROE",r.x+r.w/2.0,r.y+r.h+6.3,6.7,rgb(251,220,151));
         let r=home_play_rect(vw);
-        button(r.x,r.y,r.w,r.h,"JUGAR");
+        button(r.x,r.y,r.w,r.h,"JUGAR",assets);
     }else{
         draw_rectangle(0.0,0.0,vw,180.0,rgba(0,0,0,175));
-        centered("ELEGIR PERSONAJE",vw/2.0,38.0,21.0,rgb(246,213,110));
+        font_centered(assets,"ELEGIR PERSONAJE",vw/2.0,38.0,21.0,rgb(246,213,110));
         let descriptions=[
             "MISIL / RAYO / NOVA",
             "CUCHILLOS / ABANICO",
@@ -87,12 +114,12 @@ pub fn draw_home(
             let r=home_selection_rect(i,vw);
             framed(r.x,r.y,r.w,r.h,cl==hero);
             portrait(assets,cl,r.x+20.0,r.y+8.0,38.0,41.0);
-            centered(cl.name(),r.x+r.w/2.0,r.y+59.0,9.0,
+            font_centered(assets,cl.name(),r.x+r.w/2.0,r.y+59.0,9.0,
                 if cl==hero{rgb(254,226,144)}else{rgb(220,218,226)});
-            centered(descriptions[i],r.x+r.w/2.0,r.y+69.0,6.0,
+            font_centered(assets,descriptions[i],r.x+r.w/2.0,r.y+69.0,6.0,
                 rgb(179,189,209));
         }
-        let r=home_back_rect(vw);button(r.x,r.y,r.w,r.h,"VOLVER");
+        let r=home_back_rect(vw);button(r.x,r.y,r.w,r.h,"VOLVER",assets);
     }
 }
 fn oct(x:f32,y:f32,w:f32,h:f32,cut:f32,fill:Color,stroke:Color){
@@ -129,7 +156,7 @@ pub fn draw_hud(w:&World,vw:f32,assets:&Assets,name:&str){
     oct(27.0,29.3,15.0,9.0,2.5,rgb(17,28,52),rgb(239,200,83));
     centered(&p.level.to_string(),34.5,36.0,8.5,rgb(252,225,142));
     oct(31.2,4.2,68.0,11.0,1.7,rgb(53,77,102),rgb(137,174,210));
-    centered(name,65.0,12.1,9.5,rgb(170,243,251));
+    font_centered(assets,name,65.0,12.1,9.5,rgb(170,243,251));
     bar(39.0,18.9,54.0,mp,false);
     draw_circle(36.0,21.4,5.0,rgb(18,32,55));
     draw_triangle(vec2(36.0,17.5),vec2(32.8,23.0),vec2(39.2,23.0),rgb(105,231,255));
