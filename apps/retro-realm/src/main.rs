@@ -2,10 +2,12 @@
 mod assets;
 mod controls;
 mod render;
+mod sfx;
 
 use macroquad::audio::{load_sound, play_sound, stop_sound, PlaySoundParams, Sound};
 use macroquad::prelude::*;
 use realm_core::{HeroClass, Input, MapId, World, TICK_RATE};
+use sfx::{Cue,Sfx};
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Screen {
@@ -28,6 +30,7 @@ fn config() -> Conf {
 struct Music {
     menu: Option<Sound>,
     forest: Option<Sound>,
+    night: Option<Sound>,
     boss: Option<Sound>,
     active: i32,
 }
@@ -37,10 +40,12 @@ impl Music {
         // scripts/prepare-audio.sh o scripts/prepare-audio.ps1.
         let menu = load_sound("menu.ogg").await.ok();
         let forest = load_sound("bosque_oscuro.ogg").await.ok();
+        let night = load_sound("bosque_nocturno.ogg").await.ok();
         let boss = load_sound("jefe.ogg").await.ok();
         Self {
             menu,
             forest,
+            night,
             boss,
             active: -1,
         }
@@ -50,19 +55,15 @@ impl Music {
             0 => self.menu.as_ref(),
             1 => self.forest.as_ref(),
             2 => self.boss.as_ref(),
+            3 => self.night.as_ref(),
             _ => None,
         }
     }
-    fn sync(&mut self, screen: Screen, w: &World) {
-        let next = if screen == Screen::Home {
-            0
-        } else if w.map == MapId::DarkForest && w.boss().is_some() {
-            2
-        } else if w.map == MapId::DarkForest {
-            1
-        } else {
-            -1
-        };
+    fn sync(&mut self, screen: Screen, w: &World,enabled:bool) {
+        let next = if !enabled {-1}
+            else if screen == Screen::Home {0}
+            else if w.boss().is_some() {2}
+            else if w.map == MapId::DarkForest {1} else {3};
         if next == self.active {
             return;
         }
@@ -87,6 +88,8 @@ async fn main() {
     macroquad::file::set_pc_assets_folder("apps/retro-realm/assets");
     let assets = assets::Assets::load().await;
     let mut music = Music::load().await;
+    let sounds = Sfx::load().await;
+    let mut audio_enabled = true;
     let mut chosen = HeroClass::LunarMage;
     let mut world = World::new(chosen);
     let mut screen = Screen::Home;
@@ -106,6 +109,7 @@ async fn main() {
             target.texture.set_filter(FilterMode::Nearest);
         }
 
+        if is_key_pressed(KeyCode::M) {audio_enabled=!audio_enabled;}
         // Los clics/toques del menú son independientes del movimiento del juego.
         if screen == Screen::Home {
             if is_key_pressed(KeyCode::Key1) {
@@ -142,6 +146,7 @@ async fn main() {
                 accumulator = 0.0;
             }
             if screen == Screen::Paused {
+                if controls::sound_hit(virtual_width) {audio_enabled=!audio_enabled;}
                 if is_key_pressed(KeyCode::H) || controls::menu_hit(virtual_width) {
                     screen = Screen::Home;
                     accumulator = 0.0;
@@ -168,14 +173,14 @@ async fn main() {
                 let step = 1.0 / TICK_RATE;
                 let mut cycles = 0;
                 while accumulator >= step && cycles < 6 {
-                    world.tick(pending);
+                    tick_with_audio(&mut world,pending,&sounds,audio_enabled);
                     pending = Input::default();
                     accumulator -= step;
                     cycles += 1;
                 }
             }
         }
-        music.sync(screen, &world);
+        music.sync(screen, &world,audio_enabled);
 
         let mut camera = Camera2D::from_display_rect(Rect::new(0.0, 0.0, virtual_width, 180.0));
         camera.render_target = Some(target.clone());
@@ -186,7 +191,7 @@ async fn main() {
             Screen::Playing => render::draw_game(&world, virtual_width, &assets),
             Screen::Paused => {
                 render::draw_game(&world, virtual_width, &assets);
-                render::draw_pause(virtual_width);
+                render::draw_pause(virtual_width,audio_enabled);
             }
         }
 
@@ -204,5 +209,37 @@ async fn main() {
             },
         );
         next_frame().await;
+    }
+}
+
+
+fn tick_with_audio(world: &mut World, input: Input, sounds: &Sfx, audio_enabled: bool) {
+    let hp=world.player.hp;
+    let level=world.player.level;
+    let y=world.player.y;
+    let melee=world.player.melee_ticks;
+    let cooldowns=world.player.cooldowns;
+    let dash=world.player.dash_ticks;
+    let shield=world.player.shield_ticks;
+    let killed=world.killed;
+    let current_map=world.map;
+    let had_boss=world.boss().is_some();
+    let opened=world.chests[current_map.index()].iter().filter(|c|c.opened).count();
+    world.tick(input);
+    if !audio_enabled {return;}
+    if input.jump && world.player.y<y {sounds.play(Cue::Jump);}
+    if input.melee && melee==0 && world.player.melee_ticks>0 {sounds.play(Cue::Attack);}
+    if (0..3).any(|i|input.skills[i] && cooldowns[i]==0 && world.player.cooldowns[i]>0) {
+        sounds.play(Cue::Cast);
+    }
+    if input.dash && dash==0 && world.player.dash_ticks>0 {sounds.play(Cue::Dash);}
+    if input.shield && shield==0 && world.player.shield_ticks>0 {sounds.play(Cue::Shield);}
+    if world.player.hp<hp {sounds.play(Cue::Hurt);}
+    if world.killed>killed {sounds.play(Cue::Kill);}
+    if world.player.level>level {sounds.play(Cue::Level);}
+    if world.map!=current_map {sounds.play(Cue::Portal);}
+    if !had_boss && world.boss().is_some(){sounds.play(Cue::Boss);}
+    if world.chests[current_map.index()].iter().filter(|c|c.opened).count()>opened {
+        sounds.play(Cue::Chest);
     }
 }

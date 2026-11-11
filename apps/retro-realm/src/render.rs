@@ -814,7 +814,7 @@ pub fn draw_home(vw: f32, class: HeroClass, _level: u16, assets: &Assets) {
         rgb(155, 184, 204),
     );
 }
-pub fn draw_pause(vw: f32) {
+pub fn draw_pause(vw: f32,audio_enabled:bool) {
     draw_rectangle(0.0, 0.0, vw, 180.0, rgba(0, 0, 0, 187));
     centered("PAUSA", vw / 2.0, 65.0, 28.0, rgb(248, 206, 113));
     centered("ESC - CONTINUAR", vw / 2.0, 89.0, 15.0, WHITE);

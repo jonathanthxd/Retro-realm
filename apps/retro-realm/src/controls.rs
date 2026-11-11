@@ -50,6 +50,10 @@ pub fn pause_hit(vw: f32) -> bool {
         .iter()
         .any(|p| p.x > vw - 26.0 && p.y < 28.0)
 }
+pub fn sound_hit(vw: f32) -> bool {
+    pressed_points(vw).iter().any(|p| p.x>vw/2.0-65.0 && p.x<vw/2.0+65.0
+        && p.y>134.0 && p.y<158.0)
+}
 pub fn menu_hit(vw: f32) -> bool {
     pressed_points(vw)
         .iter()

@@ -5,7 +5,7 @@ New-Item -ItemType Directory -Force -Path $destination | Out-Null
 if (-not (Get-Command ffmpeg -ErrorAction SilentlyContinue)) {
     throw "Se necesita ffmpeg instalado y disponible en PATH."
 }
-foreach ($name in @("menu", "bosque_oscuro", "jefe")) {
+foreach ($name in @("menu", "bosque_nocturno", "bosque_oscuro", "jefe")) {
     $source = Join-Path $root "$name.mp3"
     if (-not (Test-Path $source)) { throw "No existe $source" }
     $out = Join-Path $destination "$name.ogg"
