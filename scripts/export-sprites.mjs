@@ -38,7 +38,7 @@ try {
   await page.waitForFunction(() => typeof HF === 'function' && typeof ES !== 'undefined', null, {
     timeout: 30000,
   });
-  const payload = await page.evaluate(() => {
+  const payload = await page.evaluate(async () => {
     const out = [];
     const add = (name, canvas) => {
       if (!canvas || typeof canvas.toDataURL !== 'function') return;
