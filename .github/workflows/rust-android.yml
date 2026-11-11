@@ -10,32 +10,59 @@ on:
       - ".github/workflows/rust-android.yml"
   workflow_dispatch:
 
+env:
+  NDK_VERSION: "28.2.13676358"
+  CARGO_TERM_COLOR: always
+
 jobs:
   build-android:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 55
     steps:
       - uses: actions/checkout@v4
-      - name: Instalar ffmpeg para convertir audio
+      - name: Rust 1.95 para cargo-quad-apk mantenido
+        run: |
+          rustup toolchain install 1.95.0 --profile minimal
+          rustup target add --toolchain 1.95.0 aarch64-linux-android x86_64-linux-android
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Configurar Android SDK y NDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: "platform-tools platforms;android-35 build-tools;35.0.0 ndk;28.2.13676358"
+      - name: Exponer Android NDK
+        run: |
+          echo "NDK_HOME=$ANDROID_SDK_ROOT/ndk/$NDK_VERSION" >> "$GITHUB_ENV"
+          echo "ANDROID_HOME=$ANDROID_SDK_ROOT" >> "$GITHUB_ENV"
+      - uses: Swatinem/rust-cache@v2
+      - name: Instalar ffmpeg
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
-      - name: Convertir audio original para Macroquad
+      - name: Convertir el audio original a OGG
         run: bash scripts/prepare-audio.sh
-      - name: Compilar APK nativo en el contenedor oficial de Macroquad
+      - name: Instalar cargo-quad-apk compatible con Rust moderno
+        run: cargo +1.95.0 install --git https://github.com/hoklims/cargo-quad-apk --locked
+      - name: Compilar APK nativo
+        working-directory: apps/retro-realm
+        run: cargo +1.95.0 quad-apk build --release
+      - name: Verificar que se generó APK
+        shell: bash
         run: |
-          docker run --rm \
-            -v "$PWD":/root/src \
-            -w /root/src/apps/retro-realm \
-            notfl3/cargo-apk \
-            cargo quad-apk build --release
-      - name: Inspeccionar APKs
-        run: |
-          find target -name '*.apk' -type f -print
-          find target -name '*.apk' -type f -exec ls -lh '{}' \;
+          set -euo pipefail
+          find target apps/retro-realm/target -name '*.apk' -type f -print 2>/dev/null || true
+          apk="$(find apps/retro-realm/target target -path '*/apk/*.apk' ! -name '*_unaligned.apk' -type f -print -quit 2>/dev/null || true)"
+          if [ -z "$apk" ]; then
+            echo "::error::No se generó un APK nativo."
+            exit 1
+          fi
+          echo "APK: $apk"
+          ls -lh "$apk"
       - uses: actions/upload-artifact@v4
         with:
           name: RetroRealm-Rust-APK-PRELIMINAR
           path: |
-            target/android-artifacts/release/apk/*.apk
             apps/retro-realm/target/android-artifacts/release/apk/*.apk
+            target/android-artifacts/release/apk/*.apk
           if-no-files-found: error
           retention-days: 7
