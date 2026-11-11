@@ -44,7 +44,7 @@ fn hero(x:f32,y:f32,c:HeroClass,dir:f32,time:u64,shield:bool,dash:bool) {
     let foot=y-1.0;
     draw_ellipse(x,foot+0.5,11.0,2.0,0.0,rgba(0,0,0,130));
     if dash {
-        for i in 1.0.4 {draw_rectangle(x-dir*i as f32*7.0-6.0,y-24.0,12.0,20.0,
+        for i in 1..4 {draw_rectangle(x-dir*i as f32*7.0-6.0,y-24.0,12.0,20.0,
             rgba(39,224,232,(70/i) as u8));}
     }
     // Silueta por bloques: temporal hasta importar el atlas exacto del Canvas JS.
@@ -84,7 +84,7 @@ fn terrain(w:&World,vw:f32,cam:f32){
     for i in min..max.min(320) {
         let x=i as f32*16.0-cam;let y=w.terrain[i];
         draw_rectangle(x,y,16.0,180.0-y,if dark {rgb(34,29,59)}else{rgb(46,28,65)});
-        for yy in ((y/16.0) as i32+1).0.12 {
+        for yy in ((y/16.0) as i32+1)..12 {
             let cy=yy as f32*16.0;
             draw_rectangle(x+2.0,cy+2.0,12.0,1.0,if dark {rgb(51,47,79)}else{rgb(70,43,87)});
         }
@@ -96,7 +96,7 @@ fn background(w:&World,vw:f32,cam:f32){
     let dark=w.map==MapId::DarkForest;
     let top=if dark {[7.0,11.0,24.0]}else{[8.0,17.0,48.0]};
     let low=if dark {[18.0,30.0,60.0]}else{[41.0,69.0,113.0]};
-    for i in 0.0.24 {
+    for i in 0..24 {
         let a=i as f32/24.0;
         draw_rectangle(0.0,i as f32*8.0,vw,8.0,rgb(
             (top[0]*(1.0-a)+low[0]*a) as u8,
@@ -105,14 +105,14 @@ fn background(w:&World,vw:f32,cam:f32){
         ));
     }
     // Estrellas y capas parallax sin generar texturas por fotograma.
-    for i in 0.0.80 {
+    for i in 0..80 {
         let x=(i as f32*71.0-cam*0.04).rem_euclid(vw+45.0);
         let y=(i*37%90) as f32;
         if dark || i%3==0 {draw_rectangle(x,y,1.0,1.0,rgba(226,238,255,(65+i%6*26) as u8));}
     }
     let moon_x=(if dark {90.0}else{250.0})-cam*0.015;
     draw_circle(moon_x,35.0,if dark {17.0}else{15.0},if dark {rgb(198,208,228)}else{rgb(230,240,138)});
-    for layer in 0.0.3 {
+    for layer in 0..3 {
         let parallax=[0.12,0.24,0.40][layer];
         let span=[76.0,54.0,41.0][layer];
         let color=if dark {[rgb(27,36,70),rgb(17,26,52),rgb(10,17,36)][layer]}
@@ -266,19 +266,19 @@ fn home_card_rect(i:usize,vw:f32)->Rect {
     Rect::new(vw/2.0-125.0+i as f32*86.0,63.0,79.0,57.0)
 }
 pub fn home_character_hit(p:Vec2,vw:f32)->Option<usize> {
-    (0.0.3).find(|i|home_card_rect(*i,vw).contains(p))
+    (0..3).find(|i|home_card_rect(*i,vw).contains(p))
 }
 pub fn home_play_hit(p:Vec2,vw:f32)->bool {
     Rect::new(vw/2.0-62.0,132.0,124.0,30.0).contains(p)
 }
 pub fn draw_home(vw:f32,class:HeroClass,_level:u16){
-    for i in 0.0.22 {
+    for i in 0..22 {
         draw_rectangle(0.0,i as f32*9.0,vw,9.0,rgb((8+i/3) as u8,(14+i/2) as u8,(30+i) as u8));
     }
-    for i in 0.0.40 {draw_rectangle((i*61) as f32%vw,(i*47%65) as f32,1.0,1.0,rgba(185,237,245,170));}
+    for i in 0..40 {draw_rectangle((i*61) as f32%vw,(i*47%65) as f32,1.0,1.0,rgba(185,237,245,170));}
     centered("RETRO REALM",vw/2.0,27.0,29.0,rgb(245,212,111));
     centered("ELIGE TU PERSONAJE",vw/2.0,47.0,11.0,rgb(214,225,240));
-    for i in 0.0.3 {
+    for i in 0..3 {
         let chosen=HeroClass::from_index(i);
         let r=home_card_rect(i,vw);
         panel(r.x,r.y,r.w,r.h);
