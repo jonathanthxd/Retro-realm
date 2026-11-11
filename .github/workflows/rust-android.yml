@@ -16,6 +16,8 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
+      - name: Instalar ffmpeg para convertir audio
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
       - name: Convertir audio original para Macroquad
         run: bash scripts/prepare-audio.sh
       - name: Compilar APK nativo en el contenedor oficial de Macroquad
