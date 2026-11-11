@@ -1,41 +1,47 @@
-# Retro Realm — contrato de migración 1:1
+# Migración Retro Realm a Rust + Macroquad — paridad y aceptación
 
-## Alcance inmutable
+## Objetivo
 
-- Clases: Maga Lunar, Cazadora, Mapache Cyber.
-- Bosques: Bosque Nocturno (20 enemigos) y Bosque Oscuro (30 enemigos).
-- Jefes finales: Ogro Pantanoso y Rey de las Tumbas, respectivamente.
-- Progresión: experiencia, niveles, HP/MP, monedas, gemas, cofres, portales.
-- Mecánicas: movimiento, salto/doble salto, melee, tres habilidades, dash y escudo.
-- Estilo: pixel art, HUD táctil, atmósfera de cada bosque y las pistas musicales originales.
-- El tercer mapa permanece «Próximamente». No se añade contenido inventado.
+Reimplementar **el mismo juego** en Rust nativo, sin WebView ni motor externo, manteniendo dos mapas, tres clases, jefes, audio y arte original. La rama `main` **no debe reemplazarse** antes de superar las pruebas de paridad.
 
-## Estado verificable
+## Matriz de avance
 
-| Sistema | Estado | Advertencias |
+| Área | Estado al 11 de noviembre de 2026 | Diferencias pendientes |
 |---|---|---|
-| HTML original y compilación WebView | Conservados | No se reemplazan durante la migración |
-| Núcleo Rust sin gráficos | Implementación inicial | Comparar parámetros contra comportamiento JS completo |
-| Tres clases y habilidades | Funcionales en simulación | Pueden faltar efectos/animaciones específicos |
-| Dos mapas, cuotas y portales | Funcionales en simulación | Falta la paridad visual |
-| IA y jefes | Parcial | Falta portar todos los patrones del Rey de las Tumbas |
-| Cofres y recompensas | Parcial | Falta comparación exacta de probabilidad/tiempos |
-| Pixel art y sprites originales | En progreso | Exportados desde Canvas; personajes, slimes, humanoides, jefes y tiles incorporados, pero aún faltan efectos/HUD exactos |
-| Música MP3 original | Preservada en raíz | Backend Macroquad usa WAV/OGG; requiere conversión y prueba |
-| Guardado antiguo localStorage | Pendiente | Requiere migración segura desde WebView |
-| APK Android nativo | Pendiente de pruebas | No afirmar compatibilidad con Android 5.0 sin prueba real |
+| Workspace `realm-core` + Macroquad | Implementado; compila en GitHub Actions | Revisar arquitectura a medida que se amplía |
+| Física a tick fijo (60 Hz) | Implementada y con pruebas | Comparación cuadro a cuadro con navegador a 60/120 Hz |
+| Maga Lunar, Cazadora y Mapache Cyber | Tres clases y tres habilidades portadas | Animaciones/hitboxes y FX específicos por clase |
+| Movimiento, salto doble, dash y escudo | Portados | Afinar sensibilidad y joystick virtual |
+| Bosque Nocturno y Bosque Oscuro | Mapas, cuotas 20/30, cofres y portales | Paridad de obstáculos, posicionamiento y ambiente |
+| Enemigos | Variantes, estadísticas originales, segunda fase de slimes/grandes y efectos de daño | Pulir IA individual y recompensas exactas |
+| Jefe Ogro Pantanoso | Aparición y segunda fase dividida | Especiales, colisiones y partículas |
+| Rey de las Tumbas | Máquina de estados combo/salto/dash/furia | Afinar tiempos y animaciones frente al HTML |
+| Sprites y decoración | Extraídos del Canvas a PNG y cargados en Macroquad | Postprocesado, iluminación, efectos detallados |
+| Parallax y Bosque Oscuro | Capas originales y lluvia en renderizador | Rayos, bruma y ciclo visual exacto |
+| Audio | OGG desde MP3 propios, efectos sintetizados y mute | Comparación auditiva, volumen independiente de música/FX |
+| UI y controles táctiles | Menú, pausa, HUD, botones y táctil básicos | Personalizar posiciones/tamaños como en HTML |
+| Perfil/ajustes y guardado | No implementado de forma persistente | Nombre, mejor nivel y preferencias guardadas |
+| Android APK | Compilación nativa confirmada en CI | Arranque/emulador/controles/audio/FPS en dispositivos reales |
 
-## Reglas de ingeniería
+## Reglas de aprobación
 
-1. No hacer cambios en \`main\` ni borrar el archivo HTML.
-2. Probar las fórmulas del núcleo con tests deterministas.
-3. Usar tick fijo de 1/60 segundo, limitado por un acumulador para evitar que el juego acelere en pantallas de 120Hz.
-4. Mantener rendering, entrada y audio fuera de \`realm-core\`.
-5. No publicar/reemplazar el APK heredado hasta paridad 1:1 validada en móvil.
-6. No asumir que una compilación CI equivale a una prueba in-game.
+1. No hacer merge del [PR #1](https://github.com/jonathanthxd/Retro-realm/pull/1) mientras no exista una comprobación de paridad.
+2. Deben funcionar ambas rutas completas: 20 enemigos → ogro → segunda fase → portal; 30 enemigos → Rey → portal «Próximamente».
+3. El juego debe permanecer a velocidad lógica constante en pantallas de 60/90/120 Hz.
+4. Probar las tres clases con cada habilidad, doble salto, dash, escudo, todos los tipos de enemigo y cofres.
+5. Reproducir las reglas de lentitud, quemadura, veneno, XP/monedas, gemas y jefes sin saltos de estado.
+6. Probar en al menos un teléfono Android real de gama baja y uno de gama media, incluyendo música/SFX, suspensión, rotación e instalación.
+7. No usar el identificador de la app original ni intentar importar datos privados del WebView sin una migración de datos comprobada y autorizada.
 
-## Lista de diferencias conocidas
+## Pruebas automáticas
 
-La versión Rust actual **no es aún una migración completa**: la lógica de ataque específico de varios enemigos, la lógica avanzada del Rey, todos los sprites exactos, los efectos del mapa, la pantalla de configuración y la persistencia requieren portado individual y pruebas comparativas.
+```bash
+cargo check --workspace --all-targets
+cargo test -p realm-core
+```
 
-La rama se mantiene separada para evitar que esta etapa de desarrollo afecte a la versión original.
+La compilación CI y un APK generado demuestran que el proyecto **construye**, no certifican su jugabilidad ni su fidelidad 1:1. El sistema sigue en **preview**.
+
+El HTML original incluía datos `localStorage` (`pq_name`, `pq_lv`, `pq_cls`, `pq_mv`, `pq_sv`, `pq_ms`, `pq_ctl`, `rr_sz`). El port no debe afirmar que conserva esos datos, ni sustituir su almacenamiento antes de implementar y validar la importación.
+
+Este fork no declara una licencia de distribución independiente en el upstream. Confirmar derechos y atribuciones antes de publicar APKs de forma externa al repositorio.

@@ -9,6 +9,12 @@ on:
       - "Cargo.toml"
       - ".github/workflows/rust-android.yml"
   workflow_dispatch:
+    inputs:
+      run_emulator:
+        description: 'Ejecutar prueba de arranque en Android 14 (lenta)'
+        type: boolean
+        required: false
+        default: false
 
 env:
   NDK_VERSION: "28.2.13676358"
@@ -68,6 +74,7 @@ jobs:
           retention-days: 7
 
   emulator-smoke:
+    if: github.event_name == 'workflow_dispatch' && inputs.run_emulator
     name: Arranque Android 14 con emulador
     runs-on: ubuntu-latest
     timeout-minutes: 30

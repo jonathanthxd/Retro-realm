@@ -1,52 +1,35 @@
-# Retro Realm nativo para Android (experimental)
+# Android nativo experimental — Retro Realm
 
-La aplicación Android original **sigue siendo la que distribuye el workflow
-\`RetroRealm.yml\` en \`main\`**. La compilación de esta rama no es
-una versión para publicar: falta completar el port de sprites, IA y persistencia.
+El juego anterior sigue siendo HTML/WebView en `main`. Esta rama crea un **APK Android real con Rust + Macroquad**, separado mediante el identificador `com.pixelquest.game.preview`.
 
-## Preparar audio
+## Construcción automática
 
-Macroquad acepta audio Vorbis/OGG y WAV. Los MP3 originales se conservan.
-Se convierten en .ogg sin agregar las conversiones al repositorio.
+GitHub Actions: [Rust / Macroquad — Android APK experimental](https://github.com/jonathanthxd/Retro-realm/actions/workflows/rust-android.yml).
 
-Windows PowerShell:
+El workflow usa Rust 1.95, Android SDK/NDK r28, `cargo-quad-apk` y FFmpeg. Desde una ejecución satisfactoria, descargar el artefacto **`RetroRealm-Rust-APK-PRELIMINAR`**. La extensión del archivo de descarga es .zip y dentro está el .apk. Los artefactos de prueba caducan a los siete días.
 
-\`\`\`powershell
+Los builds de `push` generan el APK de prueba. El smoke test en emulador, por ser lento y costoso, se ejecuta **solo** mediante `workflow_dispatch` activando `run_emulator`.
+
+## Audio y PC
+
+Los archivos MP3 originales permanecen en la raíz. Para crear OGG compatibles con el motor:
+
+```powershell
 .\scripts\prepare-audio.ps1
 cargo run -p retro-realm
-\`\`\`
+```
 
-Linux/CI:
+Requiere FFmpeg y Rust. Los archivos convertidos no se suben al control de versiones; CI los genera durante la compilación.
 
-\`\`\`bash
-bash scripts/prepare-audio.sh
-cargo run -p retro-realm
-\`\`\`
+La música del primer bosque usa `bosque_nocturno.mp3`, recurso incluido en la raíz pero **no utilizado por el HTML original**. Los efectos generados en Rust son recreaciones provisionales del sintetizador del navegador, no grabaciones ni reproducciones 1:1.
 
-Se requiere \`ffmpeg\` instalado en PATH.
+## Comprobaciones móviles
 
-## APK nativo
+- Instalar junto al WebView anterior (no reemplazar ni desinstalar el juego antiguo).
+- Comprobar orientación horizontal, imagen no invertida, recorte en pantallas con notch.
+- Escoger cada personaje, jugar, combatir, abrir cofres y atravesar ambos portales.
+- Confirmar que el audio funciona con auriculares y al volver de segundo plano.
+- Medir FPS, consumo de memoria y temperatura tras una partida larga.
+- Revisar los artefactos de captura/logcat del smoke test en caso de fallos.
 
-El workflow \`.github/workflows/rust-android.yml\` intenta compilar un APK
-experimental Rust + Macroquad, separado del APK WebView anterior.
-
-Utiliza Rust 1.95 + Android NDK r28 y el fork actualizado de
-[hoklims/cargo-quad-apk](https://github.com/hoklims/cargo-quad-apk), puesto que
-la imagen Docker histórica del tutorial Macroquad trae Cargo 1.61 y no soporta
-las opciones actuales del workspace.
-
-**Nota:** la imagen y la herramienta Android de Macroquad pueden necesitar ajustes
-según la versión de Cargo/Android NDK; no prometer un APK funcional hasta
-que CI lo construya y un teléfono real lo ejecute.
-
-Por seguridad el APK de pruebas utiliza el identificador aislado
-\`com.pixelquest.game.preview\`: se instala **al lado del original** y
-no sobrescribe datos del juego WebView. Solo cuando se confirme paridad
-se decidirá cómo migrar el identificador y los datos del juego original.
-
-## Prueba automática en emulador
-
-El workflow intenta instalar el APK en Android 14 (API 34), abrir
-\`com.pixelquest.game.preview/.MainActivity\`, comprobar que el proceso
-permanece vivo y guardar captura y logcat como artefactos. Una captura
-no sustituye las pruebas de controles, audio y FPS en teléfonos reales.
+**Importante:** que Cargo cree el .apk no garantiza que se ejecute en todas las versiones Android ni que los controles sean equivalentes a los del HTML. El identificador de preview no puede leer por sí mismo `localStorage` privado de la otra aplicación.

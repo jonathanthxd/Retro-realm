@@ -1,28 +1,44 @@
 # Retro Realm
 
-Retro Realm es un juego de acción y plataformas 2D para móvil, con tres personajes y dos bosques jugables.
+Retro Realm es un juego de acción y plataformas 2D con tres personajes, enemigos, dos bosques y jefes finales.
 
-## Migración a Rust y Macroquad
+## Edición original y migración nativa
 
-La reconstrucción **está en desarrollo** en la rama
-[\`refactor/rust-macroquad-migration\`](https://github.com/jonathanthxd/Retro-realm/tree/refactor/rust-macroquad-migration).
-El objetivo es preservar el juego original sin convertirlo en otro proyecto.
+**La rama `main` conserva la versión original HTML/WebView.** La migración experimental a Rust + Macroquad se desarrolla en [`refactor/rust-macroquad-migration`](https://github.com/jonathanthxd/Retro-realm/tree/refactor/rust-macroquad-migration), con un [pull request en borrador](https://github.com/jonathanthxd/Retro-realm/pull/1).
 
-- \`Retro Realm.html\`: implementación original intacta, ejecutable en navegador y empaquetable con el workflow Android heredado.
-- \`crates/realm-core\`: simulación del juego en Rust sin dependencias gráficas; pruebas de las reglas de combate y progresión.
-- \`apps/retro-realm\`: aplicación nativa Rust + Macroquad, aún en validación.
-- \`docs/MIGRATION.md\`: contrato de paridad y limitaciones actuales.
+| Carpeta | Función |
+|---|---|
+| `Retro Realm.html` | Juego original, referencia funcional y visual |
+| `crates/realm-core` | Simulación determinista en Rust, sin dependencias gráficas |
+| `apps/retro-realm` | Aplicación nativa con Macroquad, teclado y controles táctiles |
+| `apps/retro-realm/assets/sprites` | Sprites PNG y decoración **extraídos del Canvas original** |
+| `docs/MIGRATION.md` | Comparación de sistemas, límites y criterios de paridad |
+| `docs/ANDROID.md` | Build APK y guía de prueba en Android |
 
-### Ejecutar la versión Rust en PC
+### Ejecutar en Windows
 
-Instala [Rust](https://rustup.rs/) y ejecuta desde la raíz:
+Instalar [Rust](https://rustup.rs/) y [FFmpeg](https://ffmpeg.org/). Desde la raíz del repositorio:
 
-\`\`\`powershell
+```powershell
+.\scripts\prepare-audio.ps1
 cargo run -p retro-realm
+```
+
+Para pruebas de simulación:
+
+```powershell
 cargo test -p realm-core
-\`\`\`
+cargo check --workspace --all-targets
+```
 
-El workflow \`.github/workflows/rust-android.yml\` genera APKs nativos
-experimentales y trata de validarlos en un emulador Android. La versión WebView original **no ha sido sustituida**.
+Los controles de PC incluyen A/D o flechas para moverte, espacio para saltar, F o X para golpear, 1/2/3 para habilidades, C/Shift para dash, Q/E para escudo y Enter para interactuar. ESC abre pausa, H regresa al menú y M silencia/reactiva audio.
 
-> Licencia: el repositorio original no declara una licencia de redistribución. No se concede ninguna licencia nueva sobre el código ni sobre los recursos del autor original mediante esta migración.
+### APK Android nativo
+
+El workflow [Rust / Macroquad — Android APK experimental](https://github.com/jonathanthxd/Retro-realm/actions/workflows/rust-android.yml) compila APKs de prueba. Abre una ejecución exitosa y descarga el artefacto **`RetroRealm-Rust-APK-PRELIMINAR`**.
+
+Este APK usa el identificador `com.pixelquest.game.preview` para poder instalarse junto al juego original. **No es una versión final ni ha sustituido el WebView original.** Requiere pruebas en móviles reales y comparación funcional antes de cualquier reemplazo.
+
+### Derechos de autor
+
+Este fork no incluye una licencia de reutilización explícita declarada por el upstream. La migración no supone que se hayan concedido derechos de redistribución independiente del código, imágenes o música originales.
