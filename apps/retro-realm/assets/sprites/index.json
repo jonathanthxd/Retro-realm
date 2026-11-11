@@ -1799,6 +1799,12 @@
     "ax": 0,
     "ay": 0
   },
+  "ui_font_atlas": {
+    "width": 288,
+    "height": 140,
+    "ax": 0,
+    "ay": 0
+  },
   "ui_s0_0": {
     "width": 112,
     "height": 112,
