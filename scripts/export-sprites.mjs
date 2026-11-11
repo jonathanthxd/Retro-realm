@@ -127,7 +127,7 @@ try {
         const el=document.getElementById(id);
         if(!el)continue;
         const bg=getComputedStyle(el).backgroundImage;
-        const src=(bg.match(/data:image\\/png;base64,[A-Za-z0-9+/=]+/)||[])[0];
+        const src=(bg.match(/data:image\/png;base64,[A-Za-z0-9+/=]+/)||[])[0];
         if(!src)continue;
         const im=new Image();im.src=src;
         try{await im.decode()}catch{continue}
