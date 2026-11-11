@@ -18,6 +18,16 @@ La prueba del APK de migración ha confirmado una diferencia audiovisual muy gra
 | SFX | Síntesis distinta por evento, rampas de frecuencia y ganancias exponenciales (HTML ~365) | Tonos aproximados | Reproducir formas de onda y envolventes originales |
 | Mezcla | Volumen separado de música/SFX y tres estilos musicales (HTML ~393–425) | Audio activado/desactivado | Mezclador y presets |
 
+## Primer pase de reconstrucción — implementado en la rama
+
+- `scenery.rs`: añade `zSky / zRidge / zForest / zCloud` exportados desde el HTML, bruma, haces de luz y luciérnagas. Los dos mapas todavía requieren ajustes de pases y color.
+- `ui.rs`: menú inicial con protagonista, selector de tres personajes separado, HUD retrato/barras/monedas, controles metálicos con pictogramas originales. La fuente y medidas exactas siguen en revisión.
+- `render.rs` y `main.rs`: cámara vertical amortiguada independiente del HUD, con seguimiento al jugador.
+- `scripts/export-sprites.mjs`: extrae de HTML cielo, montañas, nubes, retratos e iconos sin redibujarlos.
+- `rust-screenshots.yml`: genera cuatro capturas nativas para QA, además de las tres del HTML.
+
+**Estado:** avance importante, pero no paridad completa. Falta validar capturas, corregir diferencias, completar FX/lluvia/menús de opciones, tipografía, joystick y audio.
+
 ## Criterios de calidad
 
 1. No añadir un estilo nuevo ni reinterpretaciones arbitrarias: el HTML es la referencia.

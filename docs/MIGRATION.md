@@ -16,11 +16,11 @@ Reimplementar **el mismo juego** en Rust nativo, sin WebView ni motor externo, m
 | Enemigos | Variantes, estadísticas originales, segunda fase de slimes/grandes y efectos de daño | Pulir IA individual y recompensas exactas |
 | Jefe Ogro Pantanoso | Aparición y segunda fase dividida | Especiales, colisiones y partículas |
 | Rey de las Tumbas | Máquina de estados combo/salto/dash/furia | Afinar tiempos y animaciones frente al HTML |
-| Sprites y decoración | Extraídos del Canvas a PNG y cargados en Macroquad | Postprocesado, iluminación, efectos detallados |
-| Parallax y Bosque Oscuro | Capas originales y lluvia en renderizador | Rayos, bruma y ciclo visual exacto |
+| Sprites, escena y decoración | PNGs originales, cielo dithered, montañas, nubes, vegetación, bruma, haces de luz y bosque por capas exportados del Canvas | Pases finales, FX por enemigo, iluminación y comparación visual |
+| Paralaje, cámara y Bosque Oscuro | Capas originales, dos bosques, lluvia y seguimiento vertical amortiguado | Ciclo visual exacto, relámpagos y salpicaduras, pruebas de encuadre |
 | Audio | OGG desde MP3 propios, efectos sintetizados y mute | Comparación auditiva, volumen independiente de música/FX |
-| UI y controles táctiles | Menú, pausa, HUD, botones y táctil básicos | Personalizar posiciones/tamaños como en HTML |
-| Perfil/ajustes y guardado | No implementado de forma persistente | Nombre, mejor nivel y preferencias guardadas |
+| UI y controles táctiles | Menú principal más fiel, selección separada, retrato HUD, barras y pictogramas originales, nuevos tamaños de controles | Tipografía RetroPx, escala y posiciones configurables, joystick, créditos, pausa completa |
+| Perfil/ajustes y guardado | Nombre editable durante el menú por teclado PC, sin persistencia | Teclado virtual Android, mejor nivel, preferencias y controles persistentes |
 | Android APK | Compilación nativa confirmada en CI | Arranque/emulador/controles/audio/FPS en dispositivos reales |
 
 ## Reglas de aprobación
@@ -45,3 +45,7 @@ La compilación CI y un APK generado demuestran que el proyecto **construye**, n
 El HTML original incluía datos `localStorage` (`pq_name`, `pq_lv`, `pq_cls`, `pq_mv`, `pq_sv`, `pq_ms`, `pq_ctl`, `rr_sz`). El port no debe afirmar que conserva esos datos, ni sustituir su almacenamiento antes de implementar y validar la importación.
 
 Este fork no declara una licencia de distribución independiente en el upstream. Confirmar derechos y atribuciones antes de publicar APKs de forma externa al repositorio.
+
+## Actualización visual vNext — primer pase, todavía no aprobado
+
+Esta rama ahora incluye `scenery.rs` (capas finales de cielo/montañas/nubes), `ui.rs` (composición y botones), exportador de retratos e iconos, selector separado y cámara Y amortiguada. Las pruebas Rust **no certifican** calidad visual. Las capturas del HTML y del renderer nativo se producen en `visual-reference.yml` y `rust-screenshots.yml` para inspección lado a lado. La versión APK preview permanece experimental.

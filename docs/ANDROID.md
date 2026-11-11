@@ -23,6 +23,12 @@ Requiere FFmpeg y Rust. Los archivos convertidos no se suben al control de versi
 
 La música del primer bosque usa `bosque_nocturno.mp3`, recurso incluido en la raíz pero **no utilizado por el HTML original**. Los efectos generados en Rust son recreaciones provisionales del sintetizador del navegador, no grabaciones ni reproducciones 1:1.
 
+## Nueva APK de pruebas visuales
+
+El `version_code=4` incluye reconstrucción inicial de menú, selección de personajes, nuevo HUD, iconos de controles, paisaje por capas desde Canvas y cámara vertical amortiguada.
+
+Las capturas nativas de escritorio de este código se publican en el workflow [Rust / Macroquad — capturas visuales nativas](https://github.com/jonathanthxd/Retro-realm/actions/workflows/rust-screenshots.yml). Son una herramienta de comparación, **no sustituyen** la revisión en Android.
+
 ## Comprobaciones móviles
 
 - Instalar junto al WebView anterior (no reemplazar ni desinstalar el juego antiguo).
