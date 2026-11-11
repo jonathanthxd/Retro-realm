@@ -67,6 +67,11 @@ fn layers_forest(assets:&Assets,vw:f32,cam:f32,map:usize,dark:bool,menu:bool,t:f
 }
 fn original_sky(assets:&Assets,vw:f32,fade:f32)->bool{
     let Some(base)=assets.scene("scene_sky_0") else {return false;};
+    // Si la cámara sigue un salto alto, extender el cielo por encima de Y=0.
+    draw_texture_ex(base,0.0,-60.0,WHITE,DrawTextureParams{
+        source:Some(Rect::new(0.0,0.0,base.width(),60.0)),
+        flip_y:true,dest_size:Some(vec2(vw,60.0)),..Default::default()
+    });
     draw_texture_ex(base,0.0,0.0,WHITE,DrawTextureParams{
         dest_size:Some(vec2(vw,180.0)),..Default::default()
     });

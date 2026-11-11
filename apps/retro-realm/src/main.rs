@@ -102,6 +102,7 @@ async fn main() {
     let mut target = render_target(viewport_width, 180);
     target.texture.set_filter(FilterMode::Nearest);
     let mut accumulator = 0.0f32;
+    let mut camera_y = 0.0f32;
     let mut pending = Input::default();
 
     loop {
@@ -132,6 +133,7 @@ async fn main() {
                     } else if ui::home_play_rect(virtual_width).contains(point){
                         world=World::new(chosen);
                         screen=Screen::Playing;
+                        camera_y=0.0;
                         editing_name=false;
                         accumulator=0.0;
                     }
@@ -162,6 +164,7 @@ async fn main() {
                 && (is_key_pressed(KeyCode::Enter)||is_key_pressed(KeyCode::Space)) {
                 world=World::new(chosen);
                 screen=Screen::Playing;
+                camera_y=0.0;
                 accumulator=0.0;
             }
         } else {
@@ -209,6 +212,13 @@ async fn main() {
                 }
             }
         }
+        // La cámara del HTML original se mueve hacia p.y-120 y amortigua
+        // un 9% por tick lógico. Factor normalizado a la tasa de refresco.
+        if screen != Screen::Home {
+            let want=(world.player.y-120.0).clamp(-46.0,18.0);
+            let smooth=1.0-0.91f32.powf((get_frame_time()*60.0).max(0.0));
+            camera_y+=(want-camera_y)*smooth;
+        }
         music.sync(screen, &world,audio_enabled);
 
         let mut camera = Camera2D::from_display_rect(Rect::new(0.0, 0.0, virtual_width, 180.0));
@@ -218,7 +228,7 @@ async fn main() {
         match screen {
             Screen::Home => ui::draw_home(&world,virtual_width,chosen,home_page,&player_name,
                 world.player.level,&assets),
-            Screen::Playing => render::draw_game(&world,virtual_width,&assets,&player_name),
+            Screen::Playing => render::draw_game(&world,virtual_width,&assets,&player_name,&target,camera_y),
             Screen::Paused => {
                 render::draw_game(&world,virtual_width,&assets,&player_name);
                 ui::draw_pause(virtual_width,audio_enabled);

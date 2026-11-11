@@ -584,7 +584,16 @@ fn game_hud(w: &World, vw: f32) {
         centered(&w.message, vw / 2.0, 57.0, 15.0, rgb(250, 202, 99));
     }
 }
-pub fn draw_game(w: &World, vw: f32, assets: &Assets, name:&str) {
+pub fn draw_game(w: &World, vw: f32, assets: &Assets, name:&str,
+    target:&RenderTarget, camera_y:f32) {
+    // El mundo se mueve verticalmente, pero el HUD y los controles permanecen
+    // fijos en coordenadas de la pantalla; el Canvas HTML hace lo mismo.
+    push_camera_state();
+    let mut wc=Camera2D::from_display_rect(Rect::new(0.0,camera_y.round(),vw,180.0));
+    wc.render_target=Some(target.clone());
+    set_camera(&wc);
+    draw_rectangle(0.0,-60.0,vw,300.0,
+        if w.map==MapId::DarkForest{rgb(7,11,24)}else{rgb(5,11,30)});
     let cam = (w.player.x - vw / 2.0 + w.player.facing * 24.0).clamp(0.0, WORLD_WIDTH - vw);
     background(w, vw, cam, assets);
     decorations(w, vw, cam, assets);
@@ -628,6 +637,7 @@ pub fn draw_game(w: &World, vw: f32, assets: &Assets, name:&str) {
         draw_circle(q.x - cam, q.y, q.radius, color);
         draw_circle(q.x - cam, q.y, (q.radius / 2.0).max(1.0), WHITE);
     }
+    pop_camera_state();
     crate::ui::draw_hud(w,vw,assets,name);
     if w.game_over {
         draw_rectangle(0.0, 0.0, vw, 180.0, rgba(0, 0, 0, 195));
