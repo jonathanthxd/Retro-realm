@@ -26,7 +26,7 @@ try {
   const marker = 'function zKingPose(e){';
   if (!source.includes(marker)) throw Error('No se encontró el ancla de recursos del Rey');
   const instrumented = source.replace(marker,
-    'window.__RETRO_EXPORT={SLR,OG,zHE2,zKF};' + marker);
+    'window.__RETRO_EXPORT={SLR,OG,zHE2,zKF,CHD};' + marker);
   const base = new URL('file://' + root + '/').href;
   await page.setContent(instrumented.replace('<head>', '<head><base href="' + base + '">'), {
     waitUntil: 'domcontentloaded',
@@ -68,6 +68,7 @@ try {
     // Exposición temporal dentro del navegador. Mantiene el HTML real intacto.
     const extra = window.__RETRO_EXPORT;
     if (!extra) throw Error('No se pudo acceder a los generadores de enemigos finales');
+    extra.CHD.forEach((sprite, index) => add('chest_' + index, sprite));
     extra.SLR.forEach((variants, index) => variants.forEach((sprite, frame) => {
       add('enemy_' + (20+index) + '_' + frame, sprite);
     }));
@@ -86,6 +87,8 @@ try {
         add('king_' + pose + '_' + frame, extra.zKF(pose, frame));
       }
     }
+    add('enemy_62_0',extra.zKF('i',0));
+    add('enemy_62_1',extra.zKF('i',1));
     if (typeof window.zSetTiles === 'function') {
       window.zSetTiles(1);
       for (let j=0; j<4; j++) {
