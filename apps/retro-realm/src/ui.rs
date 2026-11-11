@@ -70,9 +70,10 @@ pub enum HomePage{Landing,Selection}
 pub fn home_play_rect(vw:f32)->Rect{Rect::new(vw-59.0,155.0,54.0,20.0)}
 pub fn home_hero_rect()->Rect{Rect::new(5.0,146.0,22.0,22.0)}
 pub fn home_name_rect(vw:f32)->Rect{Rect::new(vw/2.0-40.0,20.0,80.0,15.0)}
-pub fn home_back_rect(vw:f32)->Rect{Rect::new(vw/2.0-43.0,145.0,86.0,23.0)}
+pub fn home_back_rect(vw:f32)->Rect{Rect::new(vw/2.0-29.0,140.0,58.0,19.0)}
 pub fn home_selection_rect(i:usize,vw:f32)->Rect{
-    Rect::new(vw/2.0-122.0+i as f32*83.0,55.0,78.0,78.0)
+    // #hs .cd: max-width 130px + padding y borde a 960px reales.
+    Rect::new(vw/2.0-82.0+i as f32*57.0,68.0,50.0,54.0)
 }
 fn portrait(assets:&Assets,cl:HeroClass,x:f32,y:f32,w:f32,h:f32){
     if let Some(sprite)=assets.portrait(cl){
@@ -118,10 +119,10 @@ pub fn draw_home(
             let cl=HeroClass::from_index(i);
             let r=home_selection_rect(i,vw);
             framed(r.x,r.y,r.w,r.h,cl==hero);
-            portrait(assets,cl,r.x+20.0,r.y+8.0,38.0,41.0);
-            font_centered(assets,cl.name(),r.x+r.w/2.0,r.y+59.0,9.0,
+            portrait(assets,cl,r.x+13.0,r.y+3.0,24.0,26.0);
+            font_centered(assets,cl.name(),r.x+r.w/2.0,r.y+38.0,6.4,
                 if cl==hero{rgb(254,226,144)}else{rgb(220,218,226)});
-            font_centered(assets,descriptions[i],r.x+r.w/2.0,r.y+69.0,6.0,
+            font_centered(assets,descriptions[i],r.x+r.w/2.0,r.y+48.0,5.0,
                 rgb(179,189,209));
         }
         let r=home_back_rect(vw);button(r.x,r.y,r.w,r.h,"VOLVER",assets);
