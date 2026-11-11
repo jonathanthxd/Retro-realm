@@ -27,6 +27,11 @@ pub struct Assets {
     forest_layers: [[Option<Texture2D>; 3]; 2],
     decor_textures: HashMap<String, Texture2D>,
     decor_layout: [Vec<Decoration>; 2],
+    // Recursos artísticos de las capas zSky, zRidge, zForest, zCloud
+    // exportados desde el HTML, sin recreaciones de terceros.
+    scene_layers: HashMap<String, Texture2D>,
+    portraits: [Option<Texture2D>; 3],
+    ui_icons: HashMap<(String, usize), Texture2D>,
 }
 
 async fn texture(name: String) -> Option<Texture2D> {
@@ -55,6 +60,9 @@ impl Assets {
             forest_layers: std::array::from_fn(|_| std::array::from_fn(|_| None)),
             decor_textures: HashMap::new(),
             decor_layout: std::array::from_fn(|_| Vec::new()),
+            scene_layers: HashMap::new(),
+            portraits: std::array::from_fn(|_| None),
+            ui_icons: HashMap::new(),
         };
         for class in 0..3 {
             for phase in 0..9 {
@@ -116,6 +124,31 @@ impl Assets {
         for i in 0..2 {
             result.chests[i] = texture(format!("chest_{}", i)).await;
         }
+        for cl in 0..3 {
+            result.portraits[cl] = texture(format!("ui_portrait_{}",cl)).await;
+            for id in ["s0","s1","s2","s3","bj","bm","bl","br"] {
+                if let Some(t)=texture(format!("ui_{}_{}",id,cl)).await {
+                    result.ui_icons.insert((id.to_string(),cl),t);
+                }
+            }
+        }
+        if let Some(moon)=texture("scene_moon".to_string()).await {
+            result.scene_layers.insert("scene_moon".to_string(),moon);
+        }
+        for scene in 0..2 {
+            for part in ["sky","mf","mn","ff","fm"] {
+                let key=format!("scene_{}_{}",part,scene);
+                if let Some(t)=texture(key.clone()).await {
+                    result.scene_layers.insert(key,t);
+                }
+            }
+            for cloud in 0..4 {
+                let key=format!("scene_cloud_{}_{}",scene,cloud);
+                if let Some(t)=texture(key.clone()).await {
+                    result.scene_layers.insert(key,t);
+                }
+            }
+        }
         // Mapas de colocación de vegetación generados por el HTML original.
         // Se almacena como CSV simple para no requerir otro parser en Android.
         for map in 0..2 {
@@ -148,6 +181,15 @@ impl Assets {
             }
         }
         result
+    }
+    pub fn scene(&self,key:&str)->Option<&Texture2D> {
+        self.scene_layers.get(key)
+    }
+    pub fn portrait(&self,hero:HeroClass)->Option<&Texture2D> {
+        self.portraits[Self::class_index(hero)].as_ref()
+    }
+    pub fn ui_icon(&self,id:&str,hero:HeroClass)->Option<&Texture2D> {
+        self.ui_icons.get(&(id.to_string(),Self::class_index(hero)))
     }
     pub fn forest_layer(&self,map:usize,layer:usize)->Option<&Texture2D> {
         self.forest_layers.get(map)?.get(layer)?.as_ref()
