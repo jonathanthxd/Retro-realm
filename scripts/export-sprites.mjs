@@ -4,7 +4,7 @@
  * Dependencia solo de herramientas: npm install --no-save playwright-core.
  */
 import { chromium } from 'playwright-core';
-import { writeFile, mkdir } from 'node:fs/promises';
+import { writeFile, mkdir, readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
@@ -19,7 +19,16 @@ const browser = await chromium.launch({
 try {
   const page = await browser.newPage({ viewport: { width: 960, height: 540 } });
   page.on('pageerror', error => console.log('[HTML original]', error.message.slice(0, 180)));
-  await page.goto(new URL('file://' + path.join(root, 'Retro Realm.html')).href, {
+  // Instrumentación exclusiva del exportador, NO del HTML versionado.
+  // Así podemos capturar también los Canvas de slimes, humanos y jefes cuyos
+  // generadores viven dentro de una IIFE privada.
+  const source = await readFile(path.join(root, 'Retro Realm.html'), 'utf8');
+  const marker = 'function zKingPose(e){';
+  if (!source.includes(marker)) throw Error('No se encontró el ancla de recursos del Rey');
+  const instrumented = source.replace(marker,
+    'window.__RETRO_EXPORT={SLR,OG,zHE2,zKF};' + marker);
+  const base = new URL('file://' + root + '/').href;
+  await page.setContent(instrumented.replace('<head>', '<head><base href="' + base + '">'), {
     waitUntil: 'domcontentloaded',
     timeout: 60000,
   });
@@ -56,6 +65,34 @@ try {
     }
     for (let j = 0; j < Math.min(4, TT.length); j++) add('terrain_grass_' + j, TT[j]);
     for (let j = 0; j < Math.min(4, TD.length); j++) add('terrain_soil_' + j, TD[j]);
+    // Exposición temporal dentro del navegador. Mantiene el HTML real intacto.
+    const extra = window.__RETRO_EXPORT;
+    if (!extra) throw Error('No se pudo acceder a los generadores de enemigos finales');
+    extra.SLR.forEach((variants, index) => variants.forEach((sprite, frame) => {
+      add('enemy_' + (20+index) + '_' + frame, sprite);
+    }));
+    for (let v = 0; v < 2; v++) {
+      for (let f = 0; f < 4; f++) add('enemy_' + (60+v) + '_' + f,extra.OG[v].w[f]);
+      for (let p of ['a', 's', 'r']) add('ogre_' + (60+v) + '_' + p,extra.OG[v][p]);
+    }
+    for (let k = 40; k <= 49; k++) {
+      for (let f = 0; f < 9; f++) add('enemy_' + k + '_' + f,
+        extra.zHE2(k,f,0,0,0));
+      for (let f = 0; f < 3; f++) add('humanoid_attack_' + k + '_' + f,
+        extra.zHE2(k,9,2,f,0));
+    }
+    for (const pose of ['i','w','s1','s2','s3','a','j','f','d','sl']) {
+      for (let frame = 0; frame < (pose==='w'?4:2); frame++) {
+        add('king_' + pose + '_' + frame, extra.zKF(pose, frame));
+      }
+    }
+    if (typeof window.zSetTiles === 'function') {
+      window.zSetTiles(1);
+      for (let j=0; j<4; j++) {
+        add('dark_grass_' + j,TT[j]);
+        add('dark_soil_' + j,TD[j]);
+      }
+    }
     return out;
   });
   if (images.length < 30) throw Error('Exportación incompleta: ' + images.length + ' sprites');
