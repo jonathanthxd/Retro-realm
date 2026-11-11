@@ -176,7 +176,8 @@ try {
           Number(Boolean(item.gl)),layer].join(','));
       }
     }
-    return {images:out,decorLayout};
+    const cloudLayout=sc.ZCD.map(q=>[q.x,q.y,q.sp,q.s,q.par,q.a].join(','));
+    return {images:out,decorLayout,cloudLayout};
   });
   const images=payload.images;
   if (images.length < 30) throw Error('Exportación incompleta: ' + images.length + ' sprites');
@@ -188,6 +189,7 @@ try {
   }
   await writeFile(path.join(dest, 'index.json'), JSON.stringify(index, null, 2) + '\n');
   await writeFile(path.join(dest,'decor_layout.csv'),payload.decorLayout.join('\n')+'\n');
+  await writeFile(path.join(dest,'scene_cloud_layout.csv'),payload.cloudLayout.join('\n')+'\n');
   console.log('Exportados ' + images.length + ' sprites originales a ' + dest);
 } finally {
   await browser.close();

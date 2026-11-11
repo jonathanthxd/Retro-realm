@@ -144,11 +144,16 @@ fn night(assets:&Assets,vw:f32,cam:f32,menu:bool,t:f32) {
     layers_forest(assets,vw,cam,0,false,menu,t);
 }
 fn draw_cloud(assets:&Assets,i:usize,vw:f32,cam:f32,t:f32,fade:f32){
-    let cloud=i%4;
-    let x=((i as f32*93.0+31.0-t*(0.08+i as f32*0.025)
-        -cam*(0.03+(i%3) as f32*0.04)).rem_euclid(vw+240.0))-120.0;
-    let y=8.0+(i*19%68) as f32;
-    let a=0.55+(i%3) as f32*0.15;
+    // zBgx(): ZCD[i] trae offsets, velocidades, sprites y alpha originales.
+    let (cloud,x,y,a)=if let Some(q)=assets.clouds().get(i) {
+        (q.sprite,(q.x-t*q.speed-cam*q.parallax).rem_euclid(vw+240.0)-120.0,
+            q.y,q.alpha)
+    } else {
+        let cloud=i%4;
+        let x=(i as f32*93.0+31.0-t*(0.08+i as f32*0.025)
+            -cam*(0.03+(i%3) as f32*0.04)).rem_euclid(vw+240.0)-120.0;
+        (cloud,x,8.0+(i*19%68) as f32,0.55+(i%3) as f32*0.15)
+    };
     for scene in 0..2 {
         let opacity=if scene==0{a}else{a*fade};
         if opacity<0.01{continue;}

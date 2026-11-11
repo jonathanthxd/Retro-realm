@@ -13,6 +13,15 @@ pub struct Decoration {
     pub glow: bool,
     pub layer: u8,
 }
+#[derive(Clone,Copy,Debug)]
+pub struct Cloud {
+    pub x:f32,
+    pub y:f32,
+    pub speed:f32,
+    pub sprite:usize,
+    pub parallax:f32,
+    pub alpha:f32,
+}
 pub struct Assets {
     heroes: [[Option<Texture2D>; 9]; 3],
     attacks: [[Option<Texture2D>; 3]; 3],
@@ -32,6 +41,7 @@ pub struct Assets {
     scene_layers: HashMap<String, Texture2D>,
     portraits: [Option<Texture2D>; 3],
     ui_icons: HashMap<(String, usize), Texture2D>,
+    clouds: Vec<Cloud>,
 }
 
 async fn texture(name: String) -> Option<Texture2D> {
@@ -63,6 +73,7 @@ impl Assets {
             scene_layers: HashMap::new(),
             portraits: std::array::from_fn(|_| None),
             ui_icons: HashMap::new(),
+            clouds: Vec::new(),
         };
         for class in 0..3 {
             for phase in 0..9 {
@@ -132,6 +143,16 @@ impl Assets {
                 }
             }
         }
+        if let Ok(csv)=macroquad::file::load_string("sprites/scene_cloud_layout.csv").await {
+            for line in csv.lines(){
+                let vals:Vec<f32>=line.split(',').filter_map(|n|n.parse::<f32>().ok()).collect();
+                if vals.len()==6 {
+                    result.clouds.push(Cloud{x:vals[0],y:vals[1],
+                        speed:vals[2],sprite:(vals[3] as usize).min(3),
+                        parallax:vals[4],alpha:vals[5]});
+                }
+            }
+        }
         if let Some(moon)=texture("scene_moon".to_string()).await {
             result.scene_layers.insert("scene_moon".to_string(),moon);
         }
@@ -182,6 +203,7 @@ impl Assets {
         }
         result
     }
+    pub fn clouds(&self)->&[Cloud] {&self.clouds}
     pub fn scene(&self,key:&str)->Option<&Texture2D> {
         self.scene_layers.get(key)
     }
