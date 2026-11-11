@@ -26,7 +26,7 @@ try {
   const marker = 'function zKingPose(e){';
   if (!source.includes(marker)) throw Error('No se encontró el ancla de recursos del Rey');
   const instrumented = source.replace(marker,
-    'window.__RETRO_EXPORT={SLR,OG,zHE2,zKF,CHD};' + marker);
+    'window.__RETRO_EXPORT={SLR,OG,zHE2,zKF,CHD,ZT,ZB,ZG,ZRK,ZM,ZSG,ZGV,ZSTUMP,ZLOG,ZFENCE,FL,FL2,zDecoBuild,ZCB};' + marker);
   const base = new URL('file://' + root + '/').href;
   await page.setContent(instrumented.replace('<head>', '<head><base href="' + base + '">'), {
     waitUntil: 'domcontentloaded',
@@ -35,7 +35,7 @@ try {
   await page.waitForFunction(() => typeof HF === 'function' && typeof ES !== 'undefined', null, {
     timeout: 30000,
   });
-  const images = await page.evaluate(() => {
+  const payload = await page.evaluate(() => {
     const out = [];
     const add = (name, canvas) => {
       if (!canvas || typeof canvas.toDataURL !== 'function') return;
@@ -96,8 +96,49 @@ try {
         add('dark_soil_' + j,TD[j]);
       }
     }
-    return out;
+    // Vegetación, rocas, señales, cabañas y capas de bosque extraídas
+    // directamente de los Canvas originales. Los mapas usan las posiciones
+    // producidas por el generador determinista zDecoBuild(m).
+    const names=new Map();
+    const register=(prefix, entries)=>{
+      for (const [name,canvas] of entries) {
+        const key='decor_'+prefix+'_'+name;
+        add(key,canvas);names.set(canvas,key);
+      }
+    };
+    register('tree',Object.entries(extra.ZT));
+    register('bush',Object.entries(extra.ZB));
+    register('grass',extra.ZG.map((canvas,index)=>[String(index),canvas]));
+    register('rock',extra.ZRK.map((canvas,index)=>[String(index),canvas]));
+    register('mush',extra.ZM.map((canvas,index)=>[String(index),canvas]));
+    register('sign',extra.ZSG.map((canvas,index)=>[String(index),canvas]));
+    register('grave',extra.ZGV.map((canvas,index)=>[String(index),canvas]));
+    register('misc',[['stump',extra.ZSTUMP],['log',extra.ZLOG],['fence',extra.ZFENCE]]);
+    register('cabin',extra.ZCB.map((canvas,index)=>[String(index),canvas]));
+    for(let map=0;map<2;map++)for(let layer=0;layer<3;layer++){
+      add('forest_layer_'+map+'_'+layer,(map===0?extra.FL:extra.FL2)[layer]);
+    }
+    const decorLayout=[];
+    for(let map=0;map<2;map++){
+      const layout=extra.zDecoBuild(map);
+      for(const item of layout){
+        let key=names.get(item.s);
+        if(!key){
+          key='decor_extra_'+map+'_'+decorLayout.length;
+          add(key,item.s);
+          names.set(item.s,key);
+        }
+        const scale=item.cab?1:(item.tr?1.35:1.5);
+        const layer=item.cab?0:(item.tr?1:2);
+        const ax=Number(item.s?.ax || item.s?.width/2 || 0);
+        const ay=Number(item.s?.ay || item.s?.height || 0);
+        decorLayout.push([map,Math.round(item.x*10)/10,key,ax,ay,scale,
+          Number(Boolean(item.gl)),layer].join(','));
+      }
+    }
+    return {images:out,decorLayout};
   });
+  const images=payload.images;
   if (images.length < 30) throw Error('Exportación incompleta: ' + images.length + ' sprites');
   const index = {};
   for (const item of images) {
@@ -106,6 +147,7 @@ try {
     index[name] = { width, height, ax, ay };
   }
   await writeFile(path.join(dest, 'index.json'), JSON.stringify(index, null, 2) + '\n');
+  await writeFile(path.join(dest,'decor_layout.csv'),payload.decorLayout.join('\n')+'\n');
   console.log('Exportados ' + images.length + ' sprites originales a ' + dest);
 } finally {
   await browser.close();
