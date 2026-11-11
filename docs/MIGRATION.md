@@ -20,7 +20,7 @@
 | Dos mapas, cuotas y portales | Funcionales en simulación | Falta la paridad visual |
 | IA y jefes | Parcial | Falta portar todos los patrones del Rey de las Tumbas |
 | Cofres y recompensas | Parcial | Falta comparación exacta de probabilidad/tiempos |
-| Pixel art y sprites originales | Pendiente | Render nativo actual es provisional |
+| Pixel art y sprites originales | En progreso | Exportados desde Canvas; personajes, slimes, humanoides, jefes y tiles incorporados, pero aún faltan efectos/HUD exactos |
 | Música MP3 original | Preservada en raíz | Backend Macroquad usa WAV/OGG; requiere conversión y prueba |
 | Guardado antiguo localStorage | Pendiente | Requiere migración segura desde WebView |
 | APK Android nativo | Pendiente de pruebas | No afirmar compatibilidad con Android 5.0 sin prueba real |

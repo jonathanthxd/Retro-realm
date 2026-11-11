@@ -104,21 +104,16 @@ fn terrain(w:&World,vw:f32,cam:f32,assets:&Assets){
             let cy=yy as f32*16.0;
             draw_rectangle(x+2.0,cy+2.0,12.0,1.0,if dark {rgb(51,47,79)}else{rgb(70,43,87)});
         }
-        // Primer paso: tiles originales capturados del Canvas del bosque 0.
-        if !dark {
-            if let Some(tile)=assets.soil(i%4) {
-                for yy in ((y/16.0) as i32+1)..12 {
-                    draw_texture_ex(tile,x,yy as f32*16.0,WHITE,DrawTextureParams::default());
-                }
+        if let Some(tile)=assets.soil(i%4,dark) {
+            for yy in ((y/16.0) as i32+1)..12 {
+                draw_texture_ex(tile,x,yy as f32*16.0,WHITE,DrawTextureParams::default());
             }
-            if let Some(tile)=assets.grass(i%4) {
-                draw_texture_ex(tile,x,y,WHITE,DrawTextureParams::default());
-            } else {
-                draw_rectangle(x,y,16.0,3.0,rgb(137,164,48));
-            }
+        }
+        if let Some(tile)=assets.grass(i%4,dark) {
+            draw_texture_ex(tile,x,y,WHITE,DrawTextureParams::default());
         } else {
-            draw_rectangle(x,y,16.0,3.0,rgb(103,171,154));
-            draw_rectangle(x,y+3.0,16.0,1.0,rgb(40,107,101));
+            draw_rectangle(x,y,16.0,3.0,
+                if dark {rgb(103,171,154)}else{rgb(137,164,48)});
         }
     }
 }
@@ -155,7 +150,7 @@ fn background(w:&World,vw:f32,cam:f32){
         }
     }
 }
-fn props(w:&World,vw:f32,cam:f32) {
+fn props(w:&World,vw:f32,cam:f32,assets:&Assets) {
     let mi=w.map.index();
     for &x in TORCHES[mi] {
         let sx=x-cam;if sx < -20.0 || sx>vw+20.0 {continue;}
@@ -168,10 +163,15 @@ fn props(w:&World,vw:f32,cam:f32) {
     for chest in &w.chests[mi] {
         let sx=chest.x-cam;if sx< -20.0||sx>vw+20.0 {continue;}
         let y=w.floor(chest.x);
-        draw_rectangle(sx-9.0,y-14.0,18.0,13.0,rgb(130,82,36));
-        draw_rectangle(sx-9.0,y-14.0,18.0,3.0,rgb(180,132,65));
-        draw_rectangle(sx-2.0,y-10.0,4.0,5.0,rgb(232,192,78));
-        if chest.opened {draw_rectangle(sx-9.0,y-17.0,18.0,3.0,rgb(90,64,35));}
+        if let Some(sprite)=assets.chest(chest.opened) {
+            draw_texture_ex(sprite,sx-sprite.width()/2.0,y-sprite.height()+1.0,
+                WHITE,DrawTextureParams::default());
+        } else {
+            draw_rectangle(sx-9.0,y-14.0,18.0,13.0,rgb(130,82,36));
+            draw_rectangle(sx-9.0,y-14.0,18.0,3.0,rgb(180,132,65));
+            draw_rectangle(sx-2.0,y-10.0,4.0,5.0,rgb(232,192,78));
+            if chest.opened {draw_rectangle(sx-9.0,y-17.0,18.0,3.0,rgb(90,64,35));}
+        }
     }
     if w.cleared[mi] || w.boss_stages[mi]==BossStage::Defeated || w.spawned>0 {
         portal(w,5040.0,cam,w.portal_available());
@@ -197,7 +197,17 @@ fn enemy(e:&realm_core::Enemy,cam:f32,t:u64,assets:&Assets){
     };
     let width=if e.boss {28.0*scale}else{13.0*scale};
     let height=if e.boss {35.0*scale}else{20.0*scale};
-    if let Some(sprite)=assets.enemy(e.kind,(t/12%2) as usize) {
+    let anim_frame=if (40..=49).contains(&e.kind) {
+        if e.attack>0 {0}else{1+(t/9%8) as usize}
+    } else if e.kind==60 || e.kind==61 {(t/8%4) as usize}
+    else {(t/12%2) as usize};
+    let sprite=if e.kind==62 {
+        if e.attack>0 {assets.king("s1",(t/5%2) as usize)}
+        else {assets.king("w",(t/8%4) as usize)}
+    } else if (40..=49).contains(&e.kind) && e.attack>0 {
+        assets.humanoid_attack(e.kind,(t/5%3) as usize)
+    } else {assets.enemy(e.kind,anim_frame)};
+    if let Some(sprite)=sprite {
         let sw=sprite.width()*scale;
         let sh=sprite.height()*scale;
         draw_texture_ex(sprite,x-sw/2.0,y-sh+scale,WHITE,DrawTextureParams {
@@ -274,7 +284,7 @@ pub fn draw_game(w:&World,vw:f32,assets:&Assets){
     let cam=(w.player.x-vw/2.0+w.player.facing*24.0).clamp(0.0,WORLD_WIDTH-vw);
     background(w,vw,cam);
     terrain(w,vw,cam,assets);
-    props(w,vw,cam);
+    props(w,vw,cam,assets);
     for pickup in &w.pickups {
         let x=pickup.x-cam;
         let color=match pickup.kind {
