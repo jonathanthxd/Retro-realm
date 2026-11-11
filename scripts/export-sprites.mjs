@@ -25,8 +25,11 @@ try {
   const source = await readFile(path.join(root, 'Retro Realm.html'), 'utf8');
   const marker = 'function zKingPose(e){';
   if (!source.includes(marker)) throw Error('No se encontró el ancla de recursos del Rey');
+  const sceneAnchor = 'bgx=function(g,cx,tt){';
+  if (!source.includes(sceneAnchor)) throw Error('No se encontraron las capas originales de bgx');
   const instrumented = source.replace(marker,
-    'window.__RETRO_EXPORT={SLR,OG,zHE2,zKF,CHD,ZT,ZB,ZG,ZRK,ZM,ZSG,ZGV,ZSTUMP,ZLOG,ZFENCE,FL,FL2,zDecoBuild,ZCB};' + marker);
+    'window.__RETRO_EXPORT={SLR,OG,zHE2,zKF,CHD,ZT,ZB,ZG,ZRK,ZM,ZSG,ZGV,ZSTUMP,ZLOG,ZFENCE,FL,FL2,zDecoBuild,ZCB};' + marker)
+    .replace(sceneAnchor,'window.__RETRO_BG={ZLAY,ZMN,ZST,ZCD};' + sceneAnchor);
   const base = new URL('file://' + root + '/').href;
   await page.setContent(instrumented.replace('<head>', '<head><base href="' + base + '">'), {
     waitUntil: 'domcontentloaded',
@@ -94,6 +97,43 @@ try {
       for (let j=0; j<4; j++) {
         add('dark_grass_' + j,TT[j]);
         add('dark_soil_' + j,TD[j]);
+      }
+    }
+    // Los escenarios finales originales contienen mucho más que FL / FL2:
+    // montaña frontal y lejana, cielo dithered, bosque procedural y nubes.
+    // Estos Canvas proceden de zSky/zRidge/zForest/zCloud, no son arte nuevo.
+    const sc=window.__RETRO_BG;
+    if(!sc || sc.ZLAY.length<2) throw Error('No se pudo acceder a zSky/ZLAY');
+    add('scene_moon',sc.ZMN);
+    for(let scene=0;scene<2;scene++){
+      const art=sc.ZLAY[scene];
+      add('scene_sky_'+scene,art.sk);
+      for(const key of ['mf','mn','ff','fm'])add('scene_'+key+'_'+scene,art[key]);
+      for(let c=0;c<art.cl.length;c++)add('scene_cloud_'+scene+'_'+c,art.cl[c]);
+    }
+    // Retratos del HUD idénticos al original HTML (HTML ~1110).
+    for(let cl=0;cl<3;cl++){
+      const portrait=document.createElement('canvas');portrait.width=portrait.height=64;
+      const g=portrait.getContext('2d');g.imageSmoothingEnabled=false;
+      g.fillStyle='#244c5e';g.fillRect(0,0,64,64);
+      const hero=HF(cl,0,0,0,0);
+      g.drawImage(hero,8,0,24,26,2,4,60,62);
+      add('ui_portrait_'+cl,portrait);
+    }
+    // Pictogramas definitivos de los botones, tras aplicar CSS y clases del HTML.
+    for(let cl=0;cl<3;cl++){
+      p.cls=cl;icons();
+      for(const id of ['s0','s1','s2','s3','bj','bm','bl','br']){
+        const el=document.getElementById(id);
+        if(!el)continue;
+        const bg=getComputedStyle(el).backgroundImage;
+        const src=(bg.match(/data:image\\/png;base64,[A-Za-z0-9+/=]+/)||[])[0];
+        if(!src)continue;
+        const im=new Image();im.src=src;
+        try{await im.decode()}catch{continue}
+        const cv=document.createElement('canvas');cv.width=im.naturalWidth;cv.height=im.naturalHeight;
+        cv.getContext('2d').drawImage(im,0,0);
+        add('ui_'+id+'_'+cl,cv);
       }
     }
     // Vegetación, rocas, señales, cabañas y capas de bosque extraídas
