@@ -292,7 +292,7 @@ fn terrain(w: &World, vw: f32, cam: f32, assets: &Assets) {
         }
     }
 }
-fn background(w: &World, vw: f32, cam: f32) {
+fn background(w: &World, vw: f32, cam: f32, assets: &Assets) {
     let dark = w.map == MapId::DarkForest;
     let top = if dark {
         [7.0, 11.0, 24.0]
@@ -337,25 +337,66 @@ fn background(w: &World, vw: f32, cam: f32) {
             rgb(230, 240, 138)
         },
     );
+    // Tres tiras de paralaje que genera el mismo código Canvas original.
+    let mut original_layer=false;
     for layer in 0..3 {
-        let parallax = [0.12, 0.24, 0.40][layer];
-        let span = [76.0, 54.0, 41.0][layer];
-        let color = if dark {
-            [rgb(27, 36, 70), rgb(17, 26, 52), rgb(10, 17, 36)][layer]
-        } else {
-            [rgb(34, 67, 106), rgb(21, 52, 83), rgb(12, 38, 62)][layer]
-        };
-        for i in -2..(vw / span).ceil() as i32 + 3 {
-            let x = i as f32 * span - (cam * parallax).rem_euclid(span);
-            let h = 50.0 + ((i * 19 + layer as i32 * 17).rem_euclid(29)) as f32;
-            draw_triangle(
-                vec2(x - 14.0, 133.0),
-                vec2(x + 15.0, 133.0),
-                vec2(x, 133.0 - h),
-                color,
-            );
-            draw_rectangle(x - 3.0, 105.0, 6.0, 28.0, color);
+        if let Some(sprite)=assets.forest_layer(w.map.index(),layer) {
+            original_layer=true;
+            let offset=(cam*[0.22,0.5,0.85][layer]).rem_euclid(sprite.width());
+            let first= -offset;
+            draw_texture(sprite,first,0.0,WHITE);
+            draw_texture(sprite,first+sprite.width(),0.0,WHITE);
         }
+    }
+    if !original_layer {
+        // Solo se emplea cuando faltan los PNG originales.
+        for layer in 0..3 {
+            let parallax=[0.12,0.24,0.40][layer];
+            let span=[76.0,54.0,41.0][layer];
+            let color=if dark {[rgb(27,36,70),rgb(17,26,52),rgb(10,17,36)][layer]}
+                      else {[rgb(34,67,106),rgb(21,52,83),rgb(12,38,62)][layer]};
+            for i in -2..(vw/span).ceil() as i32+3 {
+                let x=i as f32*span-(cam*parallax).rem_euclid(span);
+                let h=50.0+((i*19+layer as i32*17).rem_euclid(29)) as f32;
+                draw_triangle(vec2(x-14.0,133.0),vec2(x+15.0,133.0),
+                    vec2(x,133.0-h),color);
+                draw_rectangle(x-3.0,105.0,6.0,28.0,color);
+            }
+        }
+    }
+}
+fn decorations(w:&World,vw:f32,cam:f32,assets:&Assets){
+    // En el original se dibujan primero cabañas, luego árboles, después objetos.
+    // Dibujamos únicamente la parte visible de cada bosque.
+    for layer in 0..3u8 {
+        for deco in assets.decor(w.map.index()) {
+            if deco.layer!=layer {continue;}
+            let x=deco.x-cam;
+            if x< -145.0 || x>vw+145.0 {continue;}
+            if let Some(sprite)=assets.decor_texture(&deco.key) {
+                let y=w.floor(deco.x)+2.0;
+                let width=sprite.width()*deco.scale;
+                let height=sprite.height()*deco.scale;
+                let left=x-deco.ax*deco.scale;
+                let top=y-deco.ay*deco.scale;
+                if deco.glow {
+                    draw_circle(x,y-8.0,11.0,rgba(120,170,255,37));
+                }
+                draw_texture_ex(sprite,left,top,WHITE,DrawTextureParams {
+                    dest_size:Some(vec2(width,height)),..Default::default()
+                });
+            }
+        }
+    }
+}
+fn rain(w:&World,vw:f32) {
+    // Lluvia ligera del Bosque Oscuro, 100 gotas sin heap allocations/tick.
+    if w.map != MapId::DarkForest {return;}
+    for i in 0..100 {
+        let seed=(i*9973+37) as f32;
+        let x=(seed*1.13-w.tick as f32*1.1).rem_euclid(vw+20.0);
+        let y=(seed*0.72+w.tick as f32*(4.0+(i%3) as f32)).rem_euclid(230.0)-35.0;
+        draw_line(x,y,x-2.0,y+5.0,0.7,rgba(180,203,245,105));
     }
 }
 fn props(w: &World, vw: f32, cam: f32, assets: &Assets) {
@@ -651,9 +692,11 @@ fn game_hud(w: &World, vw: f32) {
 }
 pub fn draw_game(w: &World, vw: f32, assets: &Assets) {
     let cam = (w.player.x - vw / 2.0 + w.player.facing * 24.0).clamp(0.0, WORLD_WIDTH - vw);
-    background(w, vw, cam);
+    background(w, vw, cam, assets);
+    decorations(w, vw, cam, assets);
     terrain(w, vw, cam, assets);
     props(w, vw, cam, assets);
+    rain(w,vw);
     for pickup in &w.pickups {
         let x = pickup.x - cam;
         let color = match pickup.kind {

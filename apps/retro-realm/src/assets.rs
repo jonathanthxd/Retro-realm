@@ -3,6 +3,16 @@ use macroquad::prelude::*;
 use realm_core::HeroClass;
 use std::collections::HashMap;
 
+#[derive(Clone, Debug)]
+pub struct Decoration {
+    pub x: f32,
+    pub key: String,
+    pub ax: f32,
+    pub ay: f32,
+    pub scale: f32,
+    pub glow: bool,
+    pub layer: u8,
+}
 pub struct Assets {
     heroes: [[Option<Texture2D>; 9]; 3],
     attacks: [[Option<Texture2D>; 3]; 3],
@@ -14,6 +24,9 @@ pub struct Assets {
     dark_grass: [Option<Texture2D>; 4],
     dark_soil: [Option<Texture2D>; 4],
     chests: [Option<Texture2D>; 2],
+    forest_layers: [[Option<Texture2D>; 3]; 2],
+    decor_textures: HashMap<String, Texture2D>,
+    decor_layout: [Vec<Decoration>; 2],
 }
 
 async fn texture(name: String) -> Option<Texture2D> {
@@ -39,6 +52,9 @@ impl Assets {
             dark_grass: std::array::from_fn(|_| None),
             dark_soil: std::array::from_fn(|_| None),
             chests: std::array::from_fn(|_| None),
+            forest_layers: std::array::from_fn(|_| std::array::from_fn(|_| None)),
+            decor_textures: HashMap::new(),
+            decor_layout: std::array::from_fn(|_| Vec::new()),
         };
         for class in 0..3 {
             for phase in 0..9 {
@@ -100,7 +116,47 @@ impl Assets {
         for i in 0..2 {
             result.chests[i] = texture(format!("chest_{}", i)).await;
         }
+        // Mapas de colocación de vegetación generados por el HTML original.
+        // Se almacena como CSV simple para no requerir otro parser en Android.
+        for map in 0..2 {
+            for layer in 0..3 {
+                result.forest_layers[map][layer] =
+                    texture(format!("forest_layer_{}_{}",map,layer)).await;
+            }
+        }
+        if let Ok(data)=macroquad::file::load_string("sprites/decor_layout.csv").await {
+            for row in data.lines() {
+                let parts: Vec<&str> = row.split(',').collect();
+                if parts.len()!=8 {continue;}
+                let map:usize=match parts[0].parse(){Ok(i) if i<2=>i,_=>continue};
+                let parse=|i:usize|parts[i].parse::<f32>().ok();
+                let (Some(x),Some(ax),Some(ay),Some(scale)) =
+                    (parse(1),parse(3),parse(4),parse(5)) else {continue};
+                let key=parts[2].to_string();
+                if key.is_empty() || !key.bytes().all(|b|b.is_ascii_alphanumeric()||b==b'_') {
+                    continue;
+                }
+                let layer=parts[7].parse::<u8>().unwrap_or(2).min(2);
+                if !result.decor_textures.contains_key(&key) {
+                    if let Some(t)=texture(key.clone()).await {
+                        result.decor_textures.insert(key.clone(),t);
+                    }
+                }
+                result.decor_layout[map].push(Decoration {
+                    x,key,ax,ay,scale:scale.clamp(0.2,3.0),glow:parts[6]=="1",layer,
+                });
+            }
+        }
         result
+    }
+    pub fn forest_layer(&self,map:usize,layer:usize)->Option<&Texture2D> {
+        self.forest_layers.get(map)?.get(layer)?.as_ref()
+    }
+    pub fn decor(&self,map:usize)->&[Decoration] {
+        self.decor_layout.get(map).map(|d|d.as_slice()).unwrap_or(&[])
+    }
+    pub fn decor_texture(&self,key:&str)->Option<&Texture2D> {
+        self.decor_textures.get(key)
     }
     fn class_index(class: HeroClass) -> usize {
         match class {
