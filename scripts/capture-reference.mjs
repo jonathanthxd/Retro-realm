@@ -33,7 +33,9 @@ try {
   await page.waitForTimeout(700);
   await page.screenshot({path:path.join(out,'01-menu-original.png')});
   await page.locator('#pl').click({force:true});
-  await page.waitForTimeout(1800);
+  // El juego tiene una pantalla de carga real de 2.3 s + transición.
+  await page.waitForTimeout(3500);
+  await page.waitForFunction(() => document.getElementById('ld')?.style.display === 'none',null,{timeout:10000});
   await page.screenshot({path:path.join(out,'02-bosque-nocturno-original.png')});
   await page.evaluate(()=>window.__RETRO_REF.setMap(1));
   await page.waitForTimeout(850);

@@ -30,14 +30,14 @@ fn framed(x:f32,y:f32,w:f32,h:f32,selected:bool){
 fn button(x:f32,y:f32,w:f32,h:f32,title:&str) {
     framed(x,y,w,h,true);
     draw_rectangle(x+4.0,y+3.0,w-8.0,1.5,rgba(255,251,215,65));
-    centered(title,x+w/2.0,y+h*0.65,
-        if title.len()>10{11.0}else{14.0},rgb(249,233,186));
+    centered(title,x+w/2.0,y+h*0.68,
+        if title.len()>10{7.0}else{9.5},rgb(249,233,186));
 }
 #[derive(Clone,Copy,PartialEq,Eq,Debug)]
 pub enum HomePage{Landing,Selection}
-pub fn home_play_rect(vw:f32)->Rect{Rect::new(vw-88.0,132.0,75.0,33.0)}
-pub fn home_hero_rect()->Rect{Rect::new(10.0,128.0,51.0,42.0)}
-pub fn home_name_rect(vw:f32)->Rect{Rect::new(vw/2.0-57.0,27.0,114.0,17.0)}
+pub fn home_play_rect(vw:f32)->Rect{Rect::new(vw-59.0,155.0,54.0,20.0)}
+pub fn home_hero_rect()->Rect{Rect::new(5.0,146.0,22.0,22.0)}
+pub fn home_name_rect(vw:f32)->Rect{Rect::new(vw/2.0-40.0,20.0,80.0,15.0)}
 pub fn home_back_rect(vw:f32)->Rect{Rect::new(vw/2.0-43.0,145.0,86.0,23.0)}
 pub fn home_selection_rect(i:usize,vw:f32)->Rect{
     Rect::new(vw/2.0-122.0+i as f32*83.0,55.0,78.0,78.0)
@@ -61,17 +61,17 @@ pub fn draw_home(
     draw_rectangle_lines(3.2,3.2,vw-6.4,173.6,0.7,rgba(237,197,97,150));
     draw_rectangle_lines(5.0,5.0,vw-10.0,170.0,0.3,rgba(255,233,139,80));
     if page==HomePage::Landing{
-        centered("RETRO REALM",vw/2.0,20.0,22.0,rgb(250,215,111));
-        draw_rectangle(vw/2.0-61.0,25.0,122.0,20.0,rgba(0,0,0,150));
-        framed(vw/2.0-58.0,27.0,116.0,17.0,false);
-        centered(name,vw/2.0,39.0,13.0,rgb(244,236,215));
-        framed(vw/2.0-29.0,48.0,58.0,13.0,true);
-        centered(&format!("NIVEL {}",level),vw/2.0,57.5,9.0,rgb(247,217,133));
+        centered("RETRO REALM",vw/2.0,15.3,13.0,rgb(250,215,111));
+        // La captura HTML utiliza un panel de ~237x43 px en 960x540.
+        framed(vw/2.0-40.0,20.0,80.0,14.0,true);
+        centered(name,vw/2.0,29.8,7.4,rgb(244,236,215));
+        framed(vw/2.0-13.2,36.4,26.4,8.8,true);
+        centered(&format!("NIVEL {}",level),vw/2.0,43.2,6.7,rgb(247,217,133));
         // Cuadro de héroe abajo a la izquierda, como HTML #hb.
         let r=home_hero_rect();
-        framed(r.x,r.y,r.w-2.0,r.h-3.0,true);
-        portrait(assets,hero,r.x+10.0,r.y+1.0,28.0,31.0);
-        centered("HÉROE",r.x+24.5,r.y+r.h+6.0,10.0,rgb(251,220,151));
+        framed(r.x,r.y,r.w,r.h,true);
+        portrait(assets,hero,r.x+2.0,r.y+1.0,18.0,18.0);
+        centered("HÉROE",r.x+r.w/2.0,r.y+r.h+6.3,6.7,rgb(251,220,151));
         let r=home_play_rect(vw);
         button(r.x,r.y,r.w,r.h,"JUGAR");
     }else{
