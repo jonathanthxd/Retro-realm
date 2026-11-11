@@ -161,6 +161,13 @@ impl Enemy {
     pub fn name(&self) -> &'static str {
         match self.kind {
             0 => "Slime",
+            20 => "Slime rosa",21 => "Slime calabaza",22 => "Slime verde",
+            23 => "Slime brote",24 => "Slime ninja",25 => "Slime lava",
+            26 => "Slime de puas",27 => "Slime oliva",28 => "Slime antena",
+            29 => "Slime planeta",30 => "Slime plano",31 => "Slime gato gris",
+            32 => "Slime gato blanco",33 => "Slime abismo",
+            34 => "Slime helice",35 => "Slime igneo",
+            36 => "Slime gota",37 => "Slime cristal",
             1 => "Segador",
             2 => "Bruto",
             3 => "Lobo",
@@ -619,41 +626,71 @@ impl World {
             e.max_hp = e.hp;
             e.base_speed = e.speed;
         }
-        // La revisión final del HTML agrega slimes y humanos, además de los iniciales.
+        // Traducción de zTune() del HTML final. Sus probabilidades y
+        // multiplicadores se conservan; el RNG de Rust es determinista.
         let r = self.rng.next();
-        if r < if self.map == MapId::NightForest {
-            0.58
-        } else {
-            0.30
-        } {
-            e.kind = self.rng.pick(if self.map == MapId::NightForest {
-                &[20, 20, 21, 22, 22, 23, 23, 24, 27, 30, 31, 32, 36, 26, 33]
-            } else {
-                &[25, 26, 28, 29, 33, 34, 35, 37, 30, 24, 21, 23]
-            });
-            e.scale = 1.0 + self.rng.range(0.0, 0.6);
-        } else if r < if self.map == MapId::NightForest {
-            0.88
-        } else {
-            0.60
-        } {
-            e.kind = self.rng.pick(if self.map == MapId::NightForest {
-                &[41, 42, 43, 48, 42, 41]
-            } else {
-                &[44, 45, 46, 47, 49, 40, 40, 46]
-            });
-            e.scale = 1.0 + self.rng.range(0.0, 0.35);
-        } else if r > 0.94 {
-            e.kind = if self.map == MapId::NightForest {
-                60
-            } else {
-                61
-            };
-            e.scale = 1.5;
-            e.hp = b * 5.0;
-            e.max_hp = e.hp;
-            e.damage = d * 2.0;
-            e.reward = 5.0;
+        if !(self.map == MapId::DarkForest && r > 0.7) {
+            let ok = if self.map == MapId::NightForest { 0.58 } else { 0.30 };
+            if r < 0.06 {
+                let t = self.rng.pick(&[12, 13, 14]);
+                let (hp, speed, damage, reward) = match t {
+                    12 => (1.4, 0.75, 1.2, 2.0),
+                    13 => (1.6, 0.5, 1.3, 2.2),
+                    _ => (1.1, 0.3, 1.1, 2.2),
+                };
+                e.kind = t;
+                e.hp = (b*hp).round();e.max_hp = e.hp;
+                e.speed = speed;e.base_speed = speed;
+                e.damage = (d*damage).round();e.reward = reward;
+            } else if r < ok {
+                let id = self.rng.pick(if self.map == MapId::NightForest {
+                    &[0,0,1,2,2,3,3,4,7,10,11,12,16,6,13]
+                } else {
+                    &[5,6,8,9,13,14,15,17,10,4,1,3]
+                });
+                // Flags 't' (tank), 'f' (flying), 'i' (ice),
+                // 'b' (burn), 'p' (poison) de SLD.
+                let effect = match id {
+                    1 | 13 => 't', 4 | 16 => 'f', 14 | 17 => 'i',
+                    5 | 15 => 'b', 8 | 10 => 'p', _ => 'n',
+                };
+                e.kind = 20 + id;
+                e.hp = (b * match effect {'t'=>2.8,'f'=>1.4,_=>2.1}).round();
+                e.max_hp = e.hp;
+                e.speed = match effect {'f'=>0.55,'i'=>0.25,_=>0.35};
+                e.base_speed = e.speed;
+                e.damage = (d * if effect=='b' {1.3}else{1.0}).round();
+                e.reward = 1.9;
+                e.scale = 1.5 + self.rng.next()*0.6;
+            } else if r < ok + 0.30 {
+                let kind = self.rng.pick(if self.map == MapId::NightForest {
+                    &[41,42,43,48,42,41]
+                } else {
+                    &[44,45,46,47,49,40,40,46]
+                });
+                // [HP, speed, damage, gold/XP, sprite scale].
+                let stats: [f32;5] = match kind {
+                    40 => [2.4,0.3,1.0,1.8,1.2],
+                    41 => [2.0,0.5,1.3,2.2,1.25],
+                    42 => [1.2,0.9,1.0,2.0,1.15],
+                    43 => [1.1,0.3,1.0,2.0,1.15],
+                    44 => [1.3,0.3,1.1,2.4,1.2],
+                    45 => [2.8,0.45,1.5,3.0,1.3],
+                    46 => [1.0,1.0,1.0,2.0,1.15],
+                    47 => [1.3,0.3,1.1,2.4,1.2],
+                    48 => [2.4,0.45,1.3,2.6,1.25],
+                    49 => [3.0,0.4,1.6,3.0,1.35],
+                    _ => unreachable!(),
+                };
+                e.kind = kind;e.hp = (b*stats[0]).round();e.max_hp=e.hp;
+                e.speed=stats[1];e.base_speed=e.speed;
+                e.damage=(d*stats[2]).round();e.reward=stats[3];e.scale=stats[4];
+            } else if r < ok + 0.38 {
+                e.kind = if self.map == MapId::NightForest {60}else{61};
+                e.hp=(b*5.0).round();e.max_hp=e.hp;
+                e.speed=0.35;e.base_speed=e.speed;
+                e.damage=(d*2.0).round();e.reward=5.0;e.scale=1.0;
+            }
         }
         e.split_on_death = (20..=37).contains(&e.kind) || matches!(e.kind, 45 | 49 | 60 | 61);
         self.enemies.push(e);
@@ -788,7 +825,7 @@ impl World {
             let dist = dx.abs();
             e.facing = if dx < 0.0 { -1.0 } else { 1.0 };
             match e.kind {
-                0 | 3 | 20..=39 => {
+                0 | 3 => {
                     if e.ground && e.attack_cd == 0 && dist > 14.0 && dist < 90.0 {
                         e.vy = -4.4;
                         e.attack_cd = 70;
@@ -800,7 +837,7 @@ impl World {
                         e.base_speed * 2.6
                     };
                 }
-                4 | 43 | 44 | 47 => {
+                4 => {
                     e.speed = if dist < 75.0 {
                         -e.base_speed
                     } else if dist > 140.0 {
@@ -1473,6 +1510,23 @@ mod tests {
         }
         assert!(a.player.x < b.player.x);
         assert_eq!(a.tick,b.tick);
+    }
+
+    #[test]
+    fn tuned_enemies_have_consistent_health_and_split_flags() {
+        let mut w=World::new(HeroClass::LunarMage);
+        w.player.x=2500.0;
+        for _ in 0..20 {
+            w.spawn_enemy();
+            if let Some(e)=w.enemies.last(){
+                assert!(e.hp>0.0 && e.max_hp==e.hp);
+                assert!(e.base_speed>0.0);
+                assert!(e.scale>=1.0);
+                if (20..=37).contains(&e.kind) || matches!(e.kind,45|49|60|61){
+                    assert!(e.split_on_death);
+                }
+            }
+        }
     }
 
 }
