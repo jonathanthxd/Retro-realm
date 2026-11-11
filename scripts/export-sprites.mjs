@@ -66,6 +66,9 @@ try {
       if (!Array.isArray(ES[k])) continue;
       for (let f = 0; f < ES[k].length; f++) add('enemy_' + k + '_' + f, ES[k][f]);
     }
+    // Al entrar al bosque el HTML sustituye TT/TD por zTile(…, ZPAL[MAP]).
+    // Los assets anteriores se exportaban antes del primer zSetTiles(0).
+    if(typeof window.zSetTiles === 'function') window.zSetTiles(0);
     for (let j = 0; j < Math.min(4, TT.length); j++) add('terrain_grass_' + j, TT[j]);
     for (let j = 0; j < Math.min(4, TD.length); j++) add('terrain_soil_' + j, TD[j]);
     // Exposición temporal dentro del navegador. Mantiene el HTML real intacto.
