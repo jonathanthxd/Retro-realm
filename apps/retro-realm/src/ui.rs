@@ -216,9 +216,9 @@ fn draw_control(b:Button,hero:HeroClass,cds:[u16;4],shield_cd:u16,assets:&Assets
         ButtonId::Shield=>shield_cd,_=>0
     };
     if cd>0{
-        draw_circle(cx+r*.65,cy+r*.6,4.3,rgb(14,12,22));
-        draw_circle_lines(cx+r*.65,cy+r*.6,4.3,0.65,rgb(242,204,95));
-        centered(&(1+cd as u32/60).to_string(),cx+r*.65,cy+r*.6+2.0,
+        draw_circle(cx+r*0.65,cy+r*0.6,4.3,rgb(14,12,22));
+        draw_circle_lines(cx+r*0.65,cy+r*0.6,4.3,0.65,rgb(242,204,95));
+        centered(&(1+cd as u32/60).to_string(),cx+r*0.65,cy+r*0.6+2.0,
             6.4,rgb(255,230,145));
     }
 }
