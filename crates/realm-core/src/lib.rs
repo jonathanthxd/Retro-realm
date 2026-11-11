@@ -399,37 +399,65 @@ impl World {
         for attack in attacks {self.hurt_player(attack);}
     }
     fn update_projectiles(&mut self) {
-        let mut explosions=Vec::new();let mut hits=Vec::new();
+        // Los impactos conservan el daño del proyectil concreto. Nunca se
+        // codifican índices como números negativos ni se busca otro proyectil.
+        let mut explosions = Vec::new();
+        let mut enemy_hits: Vec<(usize, f32)> = Vec::new();
+        let mut player_hits: Vec<f32> = Vec::new();
+        let mut chest_hits: Vec<usize> = Vec::new();
+        let active_chests = &self.chests[self.map.index()];
         for q in &mut self.projectiles {
-            q.x+=q.vx;q.y+=q.vy;q.life=q.life.saturating_sub(1);
-            if q.kind==ProjectileKind::EnemyArrow {q.vy+=0.012;}
-            let mut dead=q.life==0 || q.x<0.0 || q.x>WORLD_WIDTH || q.y>floor_at(&self.terrain,q.x);
-            if !dead && q.kind==ProjectileKind::EnemyArrow {
-                if (q.x-self.player.x).abs()<6.0 && (q.y-(self.player.y-12.0)).abs()<13.0 {
-                    dead=true;hits.push(q.damage);
+            q.x += q.vx;
+            q.y += q.vy;
+            q.life = q.life.saturating_sub(1);
+            if q.kind == ProjectileKind::EnemyArrow { q.vy += 0.012; }
+            let mut dead = q.life == 0 || q.x < 0.0 || q.x > WORLD_WIDTH
+                || q.y > floor_at(&self.terrain, q.x);
+            if !dead && q.kind == ProjectileKind::EnemyArrow {
+                if (q.x - self.player.x).abs() < 6.0
+                    && (q.y - (self.player.y - 12.0)).abs() < 13.0 {
+                    dead = true;
+                    player_hits.push(q.damage);
                 }
             } else if !dead {
-                for (i,e) in self.enemies.iter().enumerate() {
-                    if (e.x-q.x).abs()<q.radius+6.0*e.scale && q.y>e.y-24.0*e.scale && q.y<e.y+2.0 {
-                        dead=true;
-                        if q.kind!=ProjectileKind::Explosive {hits.push(-1.0 - i as f32);}
+                for (i, e) in self.enemies.iter().enumerate() {
+                    if (e.x-q.x).abs() < q.radius + 6.0 * e.scale
+                        && q.y > e.y - 24.0 * e.scale && q.y < e.y + 2.0 {
+                        dead = true;
+                        if q.kind != ProjectileKind::Explosive {
+                            enemy_hits.push((i, q.damage));
+                        }
                         break;
                     }
                 }
-            }
-            if dead {q.life=0;if q.kind==ProjectileKind::Explosive {explosions.push((q.x,q.y,q.damage));}}
-        }
-        // Recorremos impactos antes de eliminar proyectiles para conservar daño individual.
-        for hit in hits {
-            if hit < 0.0 {
-                let i=(-hit-1.0) as usize;
-                if let Some(q)=self.projectiles.iter().find(|q|q.life==0 && q.kind!=ProjectileKind::EnemyArrow) {
-                    self.damage_enemy(i,q.damage);
+                if !dead {
+                    for (i, ch) in active_chests.iter().enumerate() {
+                        let y = floor_at(&self.terrain, ch.x);
+                        if !ch.opened && (ch.x-q.x).abs() < 9.0
+                            && (q.y-(y-8.0)).abs() < 10.0 {
+                            chest_hits.push(i);
+                            dead = true;
+                            break;
+                        }
+                    }
                 }
-            } else {self.hurt_player(hit);}
+            }
+            if dead {
+                q.life = 0;
+                if q.kind == ProjectileKind::Explosive {
+                    explosions.push((q.x, q.y, q.damage));
+                }
+            }
         }
-        for (x,y,d) in explosions {self.explode(x,y,d,45.0);}
-        self.projectiles.retain(|q|q.life>0);
+        for (index, damage) in enemy_hits { self.damage_enemy(index, damage); }
+        for damage in player_hits { self.hurt_player(damage); }
+        chest_hits.sort_unstable();
+        chest_hits.dedup();
+        for index in chest_hits {
+            if !self.chests[self.map.index()][index].opened { self.open_chest(index); }
+        }
+        for (x, y, damage) in explosions { self.explode(x, y, damage, 45.0); }
+        self.projectiles.retain(|q| q.life > 0);
     }
     fn update_deaths(&mut self) {
         let mut fallen=Vec::new();
@@ -576,4 +604,34 @@ mod tests {
         assert_eq!(w.player.shield_cd,479);
         assert!(w.player.mp<71.0);
     }
+    #[test]
+    fn projectile_hits_use_each_projectiles_own_damage() {
+        let mut w = World::new(HeroClass::Huntress);
+        let x = w.player.x + 42.0;
+        let y = w.floor(x);
+        let mut e = w.enemy(x, 0, 1, 120.0, 3.0);
+        e.y = y;
+        w.enemies.push(e);
+        // Dos proyectiles alcanzan el mismo enemigo en el mismo tick.
+        w.projectiles.push(Projectile {x:x-4.0,y:y-12.0,vx:4.0,vy:0.0,
+            damage:10.0,radius:3.0,life:30,kind:ProjectileKind::Knife});
+        w.projectiles.push(Projectile {x:x-4.0,y:y-12.0,vx:4.0,vy:0.0,
+            damage:30.0,radius:3.0,life:30,kind:ProjectileKind::Knife});
+        w.update_projectiles();
+        assert!(w.enemies[0].hp < 94.0, "both distinct projectiles must deal damage");
+        assert!(w.projectiles.is_empty());
+    }
+    #[test]
+    fn projectile_opens_chest_without_changing_player_level() {
+        let mut w = World::new(HeroClass::LunarMage);
+        let x = w.chests[0][0].x;
+        let y = w.floor(x)-8.0;
+        w.projectiles.push(Projectile {x,y,vx:0.0,vy:0.0,damage:2.0,
+            radius:3.0,life:30,kind:ProjectileKind::Orb});
+        w.update_projectiles();
+        assert!(w.chests[0][0].opened);
+        assert_eq!(w.player.level,1);
+        assert!(!w.pickups.is_empty());
+    }
+
 }
