@@ -224,6 +224,12 @@ fn terrain(w: &World, vw: f32, cam: f32, assets: &Assets) {
                     WHITE,
                     DrawTextureParams::default(),
                 );
+                // zTerrain original oscurece la tierra con la profundidad:
+                // alpha = min(.6, .1 + r*.14), r empieza en 1.
+                let row=yy - ((y / 16.0) as i32);
+                let shade=(0.1+row as f32*0.14).min(0.6);
+                draw_rectangle(x,yy as f32*16.0,16.0,16.0,
+                    rgba(2,6,12,(shade*255.0) as u8));
             }
         }
         if let Some(tile) = assets.grass(i % 4, dark) {
@@ -302,6 +308,11 @@ fn props(w: &World, vw: f32, cam: f32, assets: &Assets) {
         }
         let y = w.floor(x);
         draw_rectangle(sx - 2.0, y - 23.0, 4.0, 22.0, rgb(76, 48, 32));
+        // El Canvas HTML utiliza un resplandor radial amplio en las antorchas.
+        // Cuatro halos transparentes detrás de la llama; sin textura externa.
+        for (rad,alpha) in [(35.0,9),(26.0,13),(18.0,19),(10.0,28)]{
+            draw_circle(sx,y-28.0,rad,rgba(255,156,66,alpha));
+        }
         draw_circle(sx, y - 27.0, 8.0, rgba(255, 130, 40, 40));
         draw_triangle(
             vec2(sx - 4.0, y - 27.0),
@@ -627,6 +638,8 @@ pub fn draw_game(w: &World, vw: f32, assets: &Assets, name:&str,
         w.player.melee_ticks > 0,
         assets,
     );
+    // Etiqueta flotante sobre el protagonista como en el HTML (#name tag).
+    crate::ui::draw_player_tag(assets,name,w.player.x-cam,w.player.y-46.0);
     for q in &w.projectiles {
         let color = match q.kind {
             ProjectileKind::Orb => rgb(176, 107, 255),
