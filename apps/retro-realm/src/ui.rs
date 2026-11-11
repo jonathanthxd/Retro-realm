@@ -42,6 +42,11 @@ fn font_centered(assets:&Assets,s:&str,x:f32,baseline:f32,size:f32,color:Color) 
         left+=adv;
     }
 }
+pub fn draw_player_tag(assets:&Assets,name:&str,x:f32,y:f32){
+    // Nombre flotante amarillo del personaje, permanece en cámara del mundo.
+    font_centered(assets,name,x+1.0,y+1.0,10.5,rgba(0,0,0,220));
+    font_centered(assets,name,x,y,10.5,rgb(245,210,115));
+}
 fn framed(x:f32,y:f32,w:f32,h:f32,selected:bool){
     let border=if selected{rgb(245,201,85)}else{rgb(139,134,152)};
     draw_rectangle(x+1.3,y+2.0,w,h,rgba(0,0,0,140));
