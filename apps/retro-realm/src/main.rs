@@ -2,6 +2,8 @@
 mod assets;
 mod controls;
 mod render;
+mod scenery;
+mod ui;
 mod sfx;
 
 use macroquad::audio::{load_sound, play_sound, stop_sound, PlaySoundParams, Sound};
@@ -91,6 +93,9 @@ async fn main() {
     let sounds = Sfx::load().await;
     let mut audio_enabled = true;
     let mut chosen = HeroClass::LunarMage;
+    let mut home_page = ui::HomePage::Landing;
+    let mut player_name = String::from("Jugador");
+    let mut editing_name = false;
     let mut world = World::new(chosen);
     let mut screen = Screen::Home;
     let mut viewport_width = 320u32;
@@ -112,29 +117,52 @@ async fn main() {
         if is_key_pressed(KeyCode::M) {audio_enabled=!audio_enabled;}
         // Los clics/toques del menú son independientes del movimiento del juego.
         if screen == Screen::Home {
-            if is_key_pressed(KeyCode::Key1) {
-                chosen = HeroClass::LunarMage;
-            }
-            if is_key_pressed(KeyCode::Key2) {
-                chosen = HeroClass::Huntress;
-            }
-            if is_key_pressed(KeyCode::Key3) {
-                chosen = HeroClass::CyberRaccoon;
+            if home_page == ui::HomePage::Selection {
+                if is_key_pressed(KeyCode::Key1){chosen=HeroClass::LunarMage;}
+                if is_key_pressed(KeyCode::Key2){chosen=HeroClass::Huntress;}
+                if is_key_pressed(KeyCode::Key3){chosen=HeroClass::CyberRaccoon;}
             }
             for point in controls::pressed_points(virtual_width) {
-                if let Some(i) = render::home_character_hit(point, virtual_width) {
-                    chosen = HeroClass::from_index(i);
-                }
-                if render::home_play_hit(point, virtual_width) {
-                    world = World::new(chosen);
-                    screen = Screen::Playing;
-                    accumulator = 0.0;
+                if home_page==ui::HomePage::Landing {
+                    if ui::home_hero_rect().contains(point) {
+                        home_page=ui::HomePage::Selection;
+                        editing_name=false;
+                    } else if ui::home_name_rect(virtual_width).contains(point){
+                        editing_name=true;
+                    } else if ui::home_play_rect(virtual_width).contains(point){
+                        world=World::new(chosen);
+                        screen=Screen::Playing;
+                        editing_name=false;
+                        accumulator=0.0;
+                    }
+                }else{
+                    for i in 0..3 {
+                        if ui::home_selection_rect(i,virtual_width).contains(point) {
+                            chosen=HeroClass::from_index(i);
+                        }
+                    }
+                    if ui::home_back_rect(virtual_width).contains(point){
+                        home_page=ui::HomePage::Landing;
+                    }
                 }
             }
-            if is_key_pressed(KeyCode::Enter) || is_key_pressed(KeyCode::Space) {
-                world = World::new(chosen);
-                screen = Screen::Playing;
-                accumulator = 0.0;
+            if editing_name {
+                while let Some(ch)=get_char_pressed(){
+                    if !ch.is_control() && player_name.chars().count()<14 {
+                        if player_name=="Jugador" {player_name.clear();}
+                        player_name.push(ch);
+                    }
+                }
+                if is_key_pressed(KeyCode::Backspace) {player_name.pop();}
+                if is_key_pressed(KeyCode::Enter){
+                    editing_name=false;
+                    if player_name.trim().is_empty(){player_name="Jugador".to_string();}
+                }
+            } else if home_page==ui::HomePage::Landing
+                && (is_key_pressed(KeyCode::Enter)||is_key_pressed(KeyCode::Space)) {
+                world=World::new(chosen);
+                screen=Screen::Playing;
+                accumulator=0.0;
             }
         } else {
             if is_key_pressed(KeyCode::Escape) || controls::pause_hit(virtual_width) {
@@ -149,6 +177,7 @@ async fn main() {
                 if controls::sound_hit(virtual_width) {audio_enabled=!audio_enabled;}
                 if is_key_pressed(KeyCode::H) || controls::menu_hit(virtual_width) {
                     screen = Screen::Home;
+                    home_page = ui::HomePage::Landing;
                     accumulator = 0.0;
                 }
             } else if screen == Screen::Playing {
@@ -187,11 +216,12 @@ async fn main() {
         set_camera(&camera);
         clear_background(BLACK);
         match screen {
-            Screen::Home => render::draw_home(virtual_width, chosen, world.player.level, &assets),
-            Screen::Playing => render::draw_game(&world, virtual_width, &assets),
+            Screen::Home => ui::draw_home(&world,virtual_width,chosen,home_page,&player_name,
+                world.player.level,&assets),
+            Screen::Playing => render::draw_game(&world,virtual_width,&assets,&player_name),
             Screen::Paused => {
-                render::draw_game(&world, virtual_width, &assets);
-                render::draw_pause(virtual_width,audio_enabled);
+                render::draw_game(&world,virtual_width,&assets,&player_name);
+                ui::draw_pause(virtual_width,audio_enabled);
             }
         }
 

@@ -112,7 +112,7 @@ fn bar(x:f32,y:f32,w:f32,val:f32,red:bool){
     draw_rectangle(x,y,fill,4.5,if red{rgb(145,23,39)}else{rgb(31,71,189)});
     draw_rectangle(x,y,fill,1.5,if red{rgb(254,136,145)}else{rgb(143,209,255)});
 }
-pub fn draw_hud(w:&World,vw:f32,assets:&Assets){
+pub fn draw_hud(w:&World,vw:f32,assets:&Assets,name:&str){
     let p=&w.player;
     let hp=(p.hp/p.max_hp).clamp(0.0,1.0);
     let mp=(p.mp/p.max_mp).clamp(0.0,1.0);
@@ -129,7 +129,7 @@ pub fn draw_hud(w:&World,vw:f32,assets:&Assets){
     oct(27.0,29.3,15.0,9.0,2.5,rgb(17,28,52),rgb(239,200,83));
     centered(&p.level.to_string(),34.5,36.0,8.5,rgb(252,225,142));
     oct(31.2,4.2,68.0,11.0,1.7,rgb(53,77,102),rgb(137,174,210));
-    centered("JUGADOR",65.0,12.1,9.5,rgb(170,243,251));
+    centered(name,65.0,12.1,9.5,rgb(170,243,251));
     bar(39.0,18.9,54.0,mp,false);
     draw_circle(36.0,21.4,5.0,rgb(18,32,55));
     draw_triangle(vec2(36.0,17.5),vec2(32.8,23.0),vec2(39.2,23.0),rgb(105,231,255));

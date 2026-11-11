@@ -55,7 +55,7 @@ fn layers_forest(assets:&Assets,vw:f32,cam:f32,map:usize,dark:bool,menu:bool,t:f
         let span=vw+40.0;
         let mut x=-20.0;
         while x<vw+20.0 {
-            let f=(0.05+if dark{0.035}else{0.04}*(t*0.012+x*0.02+i as f32*2.0).sin()).max(0.0);
+            let f=(0.05+(if dark{0.035}else{0.04})*(t*0.012+x*0.02+i as f32*2.0).sin()).max(0.0);
             let xx=(x-t*(0.18+i as f32*0.06)-cam*(0.3+i as f32*0.05))
                 .rem_euclid(span)-20.0;
             draw_rectangle(xx,y,28.0,5.0,if dark{

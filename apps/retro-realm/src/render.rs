@@ -47,67 +47,18 @@ pub struct Button {
     pub caption: &'static str,
 }
 pub fn buttons(vw: f32) -> [Button; 10] {
+    // Tamaños y posiciones de la última capa CSS original, traducidos a 320x180.
     [
-        Button {
-            id: ButtonId::Left,
-            center: vec2(27.0, 151.0),
-            radius: 16.0,
-            caption: "<",
-        },
-        Button {
-            id: ButtonId::Right,
-            center: vec2(67.0, 151.0),
-            radius: 16.0,
-            caption: ">",
-        },
-        Button {
-            id: ButtonId::Jump,
-            center: vec2(vw - 30.0, 153.0),
-            radius: 17.0,
-            caption: "SAL",
-        },
-        Button {
-            id: ButtonId::Melee,
-            center: vec2(vw - 70.0, 153.0),
-            radius: 17.0,
-            caption: "ATK",
-        },
-        Button {
-            id: ButtonId::Shield,
-            center: vec2(vw - 110.0, 153.0),
-            radius: 17.0,
-            caption: "ESC",
-        },
-        Button {
-            id: ButtonId::Skill0,
-            center: vec2(vw - 28.0, 105.0),
-            radius: 17.0,
-            caption: "1",
-        },
-        Button {
-            id: ButtonId::Skill1,
-            center: vec2(vw - 67.0, 105.0),
-            radius: 17.0,
-            caption: "2",
-        },
-        Button {
-            id: ButtonId::Skill2,
-            center: vec2(vw - 106.0, 105.0),
-            radius: 17.0,
-            caption: "3",
-        },
-        Button {
-            id: ButtonId::Dash,
-            center: vec2(vw - 145.0, 105.0),
-            radius: 17.0,
-            caption: "DASH",
-        },
-        Button {
-            id: ButtonId::Interact,
-            center: vec2(vw / 2.0, 153.0),
-            radius: 17.0,
-            caption: "USE",
-        },
+        Button{id:ButtonId::Left,center:vec2(15.5,156.0),radius:11.5,caption:"<"},
+        Button{id:ButtonId::Right,center:vec2(41.5,156.0),radius:11.5,caption:">"},
+        Button{id:ButtonId::Jump,center:vec2(vw-45.0,163.0),radius:11.0,caption:"SAL"},
+        Button{id:ButtonId::Melee,center:vec2(vw-18.5,161.5),radius:13.5,caption:"ATK"},
+        Button{id:ButtonId::Shield,center:vec2(vw-87.0,141.0),radius:9.5,caption:"ESC"},
+        Button{id:ButtonId::Skill0,center:vec2(vw-66.0,163.0),radius:10.0,caption:"1"},
+        Button{id:ButtonId::Skill1,center:vec2(vw-54.5,140.0),radius:10.0,caption:"2"},
+        Button{id:ButtonId::Skill2,center:vec2(vw-34.0,136.0),radius:10.0,caption:"3"},
+        Button{id:ButtonId::Dash,center:vec2(vw-13.0,132.5),radius:10.0,caption:"DASH"},
+        Button{id:ButtonId::Interact,center:vec2(vw/2.0,163.0),radius:10.0,caption:"USE"},
     ]
 }
 fn hero_color(c: HeroClass) -> Color {
@@ -293,76 +244,19 @@ fn terrain(w: &World, vw: f32, cam: f32, assets: &Assets) {
     }
 }
 fn background(w: &World, vw: f32, cam: f32, assets: &Assets) {
-    let dark = w.map == MapId::DarkForest;
-    let top = if dark {
-        [7.0, 11.0, 24.0]
-    } else {
-        [8.0, 17.0, 48.0]
-    };
-    let low = if dark {
-        [18.0, 30.0, 60.0]
-    } else {
-        [41.0, 69.0, 113.0]
-    };
-    for i in 0..24 {
-        let a = i as f32 / 24.0;
-        draw_rectangle(
-            0.0,
-            i as f32 * 8.0,
-            vw,
-            8.0,
-            rgb(
-                (top[0] * (1.0 - a) + low[0] * a) as u8,
-                (top[1] * (1.0 - a) + low[1] * a) as u8,
-                (top[2] * (1.0 - a) + low[2] * a) as u8,
-            ),
-        );
-    }
-    // Estrellas y capas parallax sin generar texturas por fotograma.
-    for i in 0..80 {
-        let x = (i as f32 * 71.0 - cam * 0.04).rem_euclid(vw + 45.0);
-        let y = (i * 37 % 90) as f32;
-        if dark || i % 3 == 0 {
-            draw_rectangle(x, y, 1.0, 1.0, rgba(226, 238, 255, (65 + i % 6 * 26) as u8));
-        }
-    }
-    let moon_x = (if dark { 90.0 } else { 250.0 }) - cam * 0.015;
-    draw_circle(
-        moon_x,
-        35.0,
-        if dark { 17.0 } else { 15.0 },
-        if dark {
-            rgb(198, 208, 228)
-        } else {
-            rgb(230, 240, 138)
-        },
-    );
-    // Tres tiras de paralaje que genera el mismo código Canvas original.
-    let mut original_layer=false;
-    for layer in 0..3 {
-        if let Some(sprite)=assets.forest_layer(w.map.index(),layer) {
-            original_layer=true;
-            let offset=(cam*[0.22,0.5,0.85][layer]).rem_euclid(sprite.width());
-            let first= -offset;
-            draw_texture(sprite,first,0.0,WHITE);
-            draw_texture(sprite,first+sprite.width(),0.0,WHITE);
-        }
-    }
-    if !original_layer {
-        // Solo se emplea cuando faltan los PNG originales.
-        for layer in 0..3 {
-            let parallax=[0.12,0.24,0.40][layer];
-            let span=[76.0,54.0,41.0][layer];
-            let color=if dark {[rgb(27,36,70),rgb(17,26,52),rgb(10,17,36)][layer]}
-                      else {[rgb(34,67,106),rgb(21,52,83),rgb(12,38,62)][layer]};
-            for i in -2..(vw/span).ceil() as i32+3 {
-                let x=i as f32*span-(cam*parallax).rem_euclid(span);
-                let h=50.0+((i*19+layer as i32*17).rem_euclid(29)) as f32;
-                draw_triangle(vec2(x-14.0,133.0),vec2(x+15.0,133.0),
-                    vec2(x,133.0-h),color);
-                draw_rectangle(x-3.0,105.0,6.0,28.0,color);
-            }
-        }
+    crate::scenery::draw(w,vw,cam,assets,false);
+}
+pub fn draw_menu_scene(w:&World,vw:f32,class:HeroClass,assets:&Assets){
+    crate::scenery::draw(w,vw,0.0,assets,true);
+    // menuDraw HTML: suelo a Y=138 y protagonista 1.4x.
+    draw_rectangle(0.0,138.0,vw,42.0,rgb(23,32,42));
+    draw_rectangle(0.0,138.0,vw,5.0,rgb(47,138,58));
+    draw_rectangle(0.0,138.0,vw,2.0,rgb(106,208,80));
+    if let Some(sprite)=assets.hero(class,0) {
+        let scale=1.4;
+        draw_texture_ex(sprite,vw/2.0-18.0*scale,138.0-50.0*scale,WHITE,
+            DrawTextureParams{dest_size:Some(vec2(sprite.width()*scale,sprite.height()*scale)),
+                ..Default::default()});
     }
 }
 fn decorations(w:&World,vw:f32,cam:f32,assets:&Assets){
@@ -690,7 +584,7 @@ fn game_hud(w: &World, vw: f32) {
         centered(&w.message, vw / 2.0, 57.0, 15.0, rgb(250, 202, 99));
     }
 }
-pub fn draw_game(w: &World, vw: f32, assets: &Assets) {
+pub fn draw_game(w: &World, vw: f32, assets: &Assets, name:&str) {
     let cam = (w.player.x - vw / 2.0 + w.player.facing * 24.0).clamp(0.0, WORLD_WIDTH - vw);
     background(w, vw, cam, assets);
     decorations(w, vw, cam, assets);
@@ -734,7 +628,7 @@ pub fn draw_game(w: &World, vw: f32, assets: &Assets) {
         draw_circle(q.x - cam, q.y, q.radius, color);
         draw_circle(q.x - cam, q.y, (q.radius / 2.0).max(1.0), WHITE);
     }
-    game_hud(w, vw);
+    crate::ui::draw_hud(w,vw,assets,name);
     if w.game_over {
         draw_rectangle(0.0, 0.0, vw, 180.0, rgba(0, 0, 0, 195));
         centered("HAS CAIDO", vw / 2.0, 80.0, 25.0, rgb(245, 89, 91));
