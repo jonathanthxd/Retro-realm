@@ -1,0 +1,39 @@
+name: Rust / Macroquad — Android APK experimental
+on:
+  push:
+    branches: [refactor/rust-macroquad-migration]
+    paths:
+      - "apps/**"
+      - "crates/**"
+      - "scripts/**"
+      - "Cargo.toml"
+      - ".github/workflows/rust-android.yml"
+  workflow_dispatch:
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Convertir audio original para Macroquad
+        run: bash scripts/prepare-audio.sh
+      - name: Compilar APK nativo en el contenedor oficial de Macroquad
+        run: |
+          docker run --rm \
+            -v "$PWD":/root/src \
+            -w /root/src/apps/retro-realm \
+            notfl3/cargo-apk \
+            cargo quad-apk build --release
+      - name: Inspeccionar APKs
+        run: |
+          find target -name '*.apk' -type f -print
+          find target -name '*.apk' -type f -exec ls -lh '{}' \;
+      - uses: actions/upload-artifact@v4
+        with:
+          name: RetroRealm-Rust-APK-PRELIMINAR
+          path: |
+            target/android-artifacts/release/apk/*.apk
+            apps/retro-realm/target/android-artifacts/release/apk/*.apk
+          if-no-files-found: error
+          retention-days: 7
