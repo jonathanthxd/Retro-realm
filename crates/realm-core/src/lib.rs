@@ -110,6 +110,9 @@ pub struct Player {
     pub shield_cd: u16,
     pub extra_jump: bool,
     pub jump_ticks: u16,
+    pub slow_ticks: u16,
+    pub burn_ticks: u16,
+    pub poison_ticks: u16,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -151,6 +154,8 @@ pub struct Enemy {
     pub king_combo_left: u8,
     pub king_dir: f32,
     pub king_air: bool,
+    pub split_on_death: bool,
+    pub generation: u8,
 }
 impl Enemy {
     pub fn name(&self) -> &'static str {
@@ -305,6 +310,9 @@ impl World {
                 shield_cd: 0,
                 extra_jump: true,
                 jump_ticks: 99,
+                slow_ticks: 0,
+                burn_ticks: 0,
+                poison_ticks: 0,
             },
             enemies: Vec::new(),
             projectiles: Vec::new(),
@@ -365,13 +373,13 @@ impl World {
             &mut p.y,
             &mut p.vy,
             &mut p.ground,
-            velocity,
+            if p.slow_ticks > 0 { velocity * 0.5 } else { velocity },
             false,
         );
     }
-    fn hurt_player(&mut self, amount: f32) {
+    fn hurt_player(&mut self, amount: f32) -> bool {
         if self.player.inv != 0 || self.game_over {
-            return;
+            return false;
         }
         let p = &mut self.player;
         p.hp = (p.hp - amount).max(0.0);
@@ -381,6 +389,7 @@ impl World {
             self.game_over = true;
             self.say("Has caido", 160);
         }
+        true
     }
     fn damage_enemy(&mut self, index: usize, amount: f32) {
         if index >= self.enemies.len() {
@@ -646,6 +655,7 @@ impl World {
             e.damage = d * 2.0;
             e.reward = 5.0;
         }
+        e.split_on_death = (20..=37).contains(&e.kind) || matches!(e.kind, 45 | 49 | 60 | 61);
         self.enemies.push(e);
         self.spawned += 1;
     }
@@ -695,6 +705,8 @@ impl World {
             king_combo_left: 0,
             king_dir: 1.0,
             king_air: false,
+            split_on_death: false,
+            generation: 0,
         }
     }
     fn spawn_boss(&mut self) {
@@ -717,6 +729,7 @@ impl World {
         e.speed = if is_dark { 0.65 } else { 0.45 };
         e.base_speed = e.speed;
         e.reward = 8.0;
+        e.split_on_death = !is_dark; // Ogro final: fase dividida. Rey: fase única.
         self.enemies.push(e);
         self.boss_stages[self.map.index()] = BossStage::Alive;
         self.say("¡JEFE FINAL!", 150);
@@ -1047,22 +1060,40 @@ impl World {
     fn update_deaths(&mut self) {
         let mut fallen = Vec::new();
         self.enemies.retain(|e| {
-            if e.hp <= 0.0 {
-                fallen.push(e.clone());
-                false
-            } else {
-                true
-            }
+            if e.hp <= 0.0 { fallen.push(e.clone()); false } else { true }
         });
+        let mut next_phase = Vec::new();
         for e in fallen {
-            if !e.boss {
-                self.killed = self.killed.saturating_add(1);
+            if !e.boss { self.killed = self.killed.saturating_add(1); }
+            // Los enemigos grandes y los slimes del HTML original generan dos
+            // criaturas al ser derrotados. El ogro final conserva la condición
+            // de jefe hasta que caen AMBOS descendientes.
+            if e.split_on_death && e.generation == 0 {
+                for side in 0..2 {
+                    let mut child = e.clone();
+                    child.x += if side == 0 {-12.0} else {12.0};
+                    child.y -= 6.0;
+                    child.vy = -3.2;
+                    child.ground = false;
+                    child.hp = (e.max_hp * if e.boss {0.5} else {0.42}).round();
+                    child.max_hp = child.hp;
+                    child.base_speed = e.base_speed * 1.15;
+                    child.speed = child.base_speed;
+                    child.damage = (e.damage*0.75).round();
+                    child.reward = e.reward*0.6;
+                    child.scale = e.scale*0.68;
+                    child.knockback = if side == 0 {-1.6} else {1.6};
+                    child.flash = 0;child.attack=0;child.attack_cd=0;
+                    child.split_on_death = false;
+                    child.generation = 1;
+                    next_phase.push(child);
+                }
+                self.say(if e.boss {"¡SEGUNDA FASE!"}else{"¡Se divide!"},75);
+                continue;
             }
             self.player.gold += ((e.level as f32 * 8.0 * e.reward).round() as u32).max(1);
             self.player.xp += ((e.level as f32 * 3.0 * e.reward).round() as u32).max(1);
-            if self.rng.next() < 0.10 {
-                self.player.gems += 1;
-            }
+            if self.rng.next() < 0.10 { self.player.gems += 1; }
             let need = self.player.level as u32 * 30;
             if self.player.xp >= need {
                 self.player.xp -= need;
@@ -1071,21 +1102,21 @@ impl World {
                 self.player.hp = self.player.max_hp;
                 self.player.max_mp += 10.0;
                 self.player.mp = self.player.max_mp;
-                self.say("¡NIVEL!", 90);
+                self.say("¡NIVEL!",90);
             }
         }
+        self.enemies.extend(next_phase);
         let m = self.map.index();
         if self.killed >= self.map.quota()
             && self.enemies.is_empty()
             && self.boss_stages[m] == BossStage::Locked
-            && !self.cleared[m]
-        {
+            && !self.cleared[m] {
             self.spawn_boss();
         } else if self.boss_stages[m] == BossStage::Alive && self.boss().is_none() {
             self.boss_stages[m] = BossStage::Defeated;
             if self.enemies.is_empty() {
                 self.cleared[m] = true;
-                self.say("Portal desbloqueado", 150);
+                self.say("Portal desbloqueado",150);
             }
         }
     }
@@ -1201,18 +1232,35 @@ impl World {
             self.spawn_timer = (130 - self.player.level as i32 * 8).max(40);
         }
         self.update_enemy_ai();
-        let hits: Vec<f32> = self
-            .enemies
-            .iter()
-            .filter(|e| (self.player.x - e.x).abs() < 9.0 && (self.player.y - e.y).abs() < 14.0)
-            .map(|e| e.damage)
-            .collect();
-        for amount in hits {
-            self.hurt_player(amount);
+        let hits: Vec<(u8, f32)> = self.enemies.iter()
+            .filter(|e| (self.player.x-e.x).abs() < 9.0 && (self.player.y-e.y).abs() < 14.0)
+            .map(|e| (e.kind,e.damage)).collect();
+        for (kind,amount) in hits {
+            if self.hurt_player(amount) {
+                // Índices de SLD en el HTML: lava/ígneo, antena/plano, hélice/cristal.
+                match kind {
+                    25 | 35 => self.player.burn_ticks=130,
+                    28 | 30 => self.player.poison_ticks=200,
+                    34 | 37 => self.player.slow_ticks=110,
+                    _ => {}
+                }
+            }
         }
         self.update_projectiles();
         self.update_deaths();
         self.update_pickups();
+        // Daño por estado sin atravesar el sistema de golpe/invulnerabilidad.
+        if self.player.slow_ticks>0 {self.player.slow_ticks-=1;}
+        if self.player.burn_ticks>0 {
+            self.player.burn_ticks-=1;
+            if self.tick%12==0 {self.player.hp=(self.player.hp-1.0).max(0.0);}
+        }
+        if self.player.poison_ticks>0 {
+            self.player.poison_ticks-=1;
+            if self.tick%22==0 {self.player.hp=(self.player.hp-1.0).max(0.0);}
+        }
+        if self.player.hp<=0.0 {self.game_over=true;}
+
         if input.interact {
             self.portal();
         }
@@ -1387,4 +1435,44 @@ mod tests {
         }
         assert_eq!(w.enemies[0].king_pose, "s1");
     }
+    #[test]
+    fn ogre_boss_really_has_two_phases_before_portal() {
+        let mut world=World::new(HeroClass::LunarMage);
+        world.spawn_boss();
+        assert_eq!(world.enemies.len(),1);
+        assert!(world.enemies[0].split_on_death);
+        world.enemies[0].hp=0.0;
+        world.update_deaths();
+        assert_eq!(world.enemies.len(),2);
+        assert!(world.enemies.iter().all(|e|e.boss && e.generation==1));
+        assert!(!world.cleared[0],"portal cannot open while boss halves live");
+        for e in &mut world.enemies {e.hp=0.0;}
+        world.update_deaths();
+        assert!(world.cleared[0]);
+    }
+    #[test]
+    fn poison_and_burn_do_not_ignore_contact_invulnerability() {
+        let mut w=World::new(HeroClass::Huntress);
+        assert!(w.hurt_player(4.0));
+        assert!(!w.hurt_player(4.0));
+        w.player.poison_ticks=23;w.player.burn_ticks=13;
+        let before=w.player.hp;
+        for _ in 0..24 {w.tick(Input::default());}
+        assert!(w.player.hp<before);
+        assert_eq!(w.player.poison_ticks,0);
+        assert_eq!(w.player.burn_ticks,0);
+    }
+    #[test]
+    fn slow_reduces_movement_speed_without_changing_game_tick() {
+        let mut a=World::new(HeroClass::LunarMage);
+        let mut b=World::new(HeroClass::LunarMage);
+        a.player.slow_ticks=20;
+        for _ in 0..10 {
+            a.tick(Input{movement:1.0,..Input::default()});
+            b.tick(Input{movement:1.0,..Input::default()});
+        }
+        assert!(a.player.x < b.player.x);
+        assert_eq!(a.tick,b.tick);
+    }
+
 }
