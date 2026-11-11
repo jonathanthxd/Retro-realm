@@ -63,6 +63,10 @@ pub struct Player {
     pub shield_cd: u16, pub extra_jump: bool, pub jump_ticks: u16,
 }
 
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum KingState { Idle, Combo, Leap, Dash }
+
 #[derive(Clone, Debug)]
 pub struct Enemy {
     pub x: f32, pub y: f32, pub vy: f32,
@@ -72,6 +76,9 @@ pub struct Enemy {
     pub scale: f32, pub knockback: f32, pub facing: f32,
     pub flash: u16, pub attack: u16, pub attack_cd: u16,
     pub boss: bool, pub action: u16, pub phase: u16,
+    pub king_state: KingState, pub king_pose: &'static str,
+    pub king_ticks: u16, pub king_move_ticks: u32, pub king_cooldown: u16,
+    pub king_combo_left: u8, pub king_dir: f32, pub king_air: bool,
 }
 impl Enemy {
     pub fn name(&self) -> &'static str {
@@ -308,17 +315,24 @@ impl World {
         Enemy {x,y:self.floor(x)-2.0,vy:0.0,ground:false,kind,level,hp:hp*mult,max_hp:hp*mult,
             speed,base_speed:speed,damage:damage*match kind {1=>1.3,2=>2.0,_=>1.0},
             reward:mult,scale:1.0,knockback:0.0,facing:1.0,flash:0,attack:0,
-            attack_cd:0,boss:false,action:0,phase:0}
+            attack_cd:0,boss:false,action:0,phase:0,
+            king_state:KingState::Idle,king_pose:"i",
+            king_ticks:0,king_move_ticks:0,king_cooldown:0,king_combo_left:0,
+            king_dir:1.0,king_air:false}
     }
     fn spawn_boss(&mut self) {
         let is_dark=self.map==MapId::DarkForest;
         let side=if self.rng.next()<0.5 {-1.0}else{1.0};
         let x=(self.player.x+side*200.0).clamp(30.0,WORLD_WIDTH-30.0);
         let level=self.player.level+2;
-        let mut e=self.enemy(x,if is_dark {62}else{60},level,(25.0+level as f32*18.0)*15.0,
-            (3.0+level as f32*2.0)*3.6);
-        e.boss=true;e.scale=if is_dark {2.0}else{1.55};
-        e.speed=if is_dark {0.42}else{0.45};e.base_speed=e.speed;
+        // Ajustes exactos del override spawnBoss original para ambos bosques.
+        let hp_mult=if is_dark {17.0}else{15.0};
+        let damage_mult=if is_dark {3.4}else{3.6};
+        let mut e=self.enemy(x,if is_dark {62}else{60},level,
+            ((25.0+level as f32*18.0)*hp_mult).round(),
+            ((3.0+level as f32*2.0)*damage_mult).round());
+        e.boss=true;e.scale=if is_dark {1.4}else{1.55};
+        e.speed=if is_dark {0.65}else{0.45};e.base_speed=e.speed;
         e.reward=8.0; self.enemies.push(e);
         self.boss_stages[self.map.index()]=BossStage::Alive;
         self.say("¡JEFE FINAL!",150);
@@ -343,6 +357,7 @@ impl World {
     }
     fn update_enemy_ai(&mut self) {
         let (px,py)=(self.player.x,self.player.y);
+        let rng=&mut self.rng;
         let mut attacks=Vec::new();
         let mut arrows=Vec::new();
         for e in &mut self.enemies {
@@ -367,17 +382,95 @@ impl World {
                     }
                 },
                 62 if e.boss => {
-                    // Estado simplificado: los patrones encadenados del Rey se portarán de forma
-                    // individual antes de declarar paridad de IA con el HTML.
-                    e.phase=e.phase.wrapping_add(1);
-                    if e.attack==0 && e.attack_cd==0 && dist<80.0 {
-                        e.attack=42;e.attack_cd=90;e.action=3;
-                    }
-                    if e.attack==23 && dist<65.0 && (e.y-py).abs()<36.0 {
-                        attacks.push((e.damage*1.4).round());
-                    }
-                    if e.phase%150==0 && dist<300.0 {
-                        e.knockback=e.facing*3.2;
+                    // Port de zKingAI (script final del HTML original):
+                    // combo encadenado, salto de área y dash; fase de furia <50% HP.
+                    let rage=e.hp < e.max_hp*0.5;
+                    let combo_size=if rage {4}else{3};
+                    e.king_move_ticks=e.king_move_ticks.saturating_add(1);
+                    e.king_cooldown=e.king_cooldown.saturating_sub(1);
+                    e.speed=0.0;
+                    match e.king_state {
+                        KingState::Idle => {
+                            e.speed=e.base_speed;
+                            e.king_pose=if !e.ground {
+                                if e.vy<0.0 {"j"}else{"f"}
+                            } else if dist>6.0 {"w"}else{"i"};
+                            if e.king_cooldown==0 {
+                                if dist<56.0 {
+                                    e.king_state=KingState::Combo;
+                                    e.king_combo_left=combo_size;
+                                    e.king_ticks=0;
+                                } else if e.king_move_ticks>(if rage {80}else{120})
+                                    && dist<300.0 {
+                                    let r=rng.next();
+                                    let leap=if dist>150.0 {r>=0.5}else{r<0.5};
+                                    e.king_state=if leap {KingState::Leap}else{KingState::Dash};
+                                    e.king_ticks=0;e.king_air=false;
+                                }
+                            }
+                        }
+                        KingState::Combo => {
+                            e.king_ticks=e.king_ticks.saturating_add(1);
+                            let i=(combo_size-e.king_combo_left).min(2);
+                            e.king_pose=match i {0=>"s1",1=>"s2",_=>"s3"};
+                            if e.king_ticks==1 {e.king_dir=e.facing;}
+                            if e.king_ticks<10 {e.knockback=e.king_dir*1.3;}
+                            if e.king_ticks==12 && dist<64.0 && (py-e.y).abs()<32.0 {
+                                attacks.push((e.damage*(if i==2 {1.4}else{1.0})).round());
+                            }
+                            if e.king_ticks>=22 {
+                                e.king_combo_left=e.king_combo_left.saturating_sub(1);
+                                e.king_ticks=0;
+                                if e.king_combo_left==0 {
+                                    e.king_state=KingState::Idle;
+                                    e.king_cooldown=if rage {45}else{70};
+                                    e.king_move_ticks=0;e.king_pose="i";
+                                }
+                            }
+                        }
+                        KingState::Leap => {
+                            e.king_ticks=e.king_ticks.saturating_add(1);
+                            if e.king_ticks<16 {e.king_pose="a";}
+                            else if e.king_ticks==16 {
+                                e.vy=-6.2;e.king_air=true;e.king_pose="j";
+                                e.knockback=e.facing*(dist/20.0+0.6).min(4.4);
+                            } else if e.king_air {
+                                e.king_pose=if e.vy<0.0 {"j"}else{"f"};
+                                if e.king_ticks<40 {
+                                    e.knockback=e.facing*(dist/22.0).abs().max(0.6).min(4.2);
+                                }
+                                if e.ground && e.king_ticks>20 {
+                                    e.king_air=false;e.king_ticks=100;
+                                    if dist<95.0 && py>e.y-30.0 {
+                                        attacks.push((e.damage*1.2).round());
+                                    }
+                                }
+                            } else if e.king_ticks>=100 {
+                                e.king_pose="sl";
+                                if e.king_ticks>=124 {
+                                    e.king_state=KingState::Idle;
+                                    e.king_cooldown=if rage {50}else{80};
+                                    e.king_move_ticks=0;e.king_pose="i";
+                                }
+                            }
+                        }
+                        KingState::Dash => {
+                            e.king_ticks=e.king_ticks.saturating_add(1);
+                            if e.king_ticks<12 {
+                                e.king_pose="a";e.king_dir=e.facing;
+                            } else if e.king_ticks<30 {
+                                e.king_pose="d";e.knockback=e.king_dir*5.4;
+                                if e.king_ticks==24 && dist<52.0 && (py-e.y).abs()<32.0 {
+                                    attacks.push((e.damage*1.3).round());
+                                }
+                            } else if e.king_ticks<44 {
+                                e.king_pose="s2";
+                            } else {
+                                e.king_state=KingState::Idle;
+                                e.king_cooldown=60;
+                                e.king_move_ticks=0;e.king_pose="i";
+                            }
+                        }
                     }
                 },
                 _ => {
@@ -633,6 +726,25 @@ mod tests {
         assert!(w.chests[0][0].opened);
         assert_eq!(w.player.level,1);
         assert!(!w.pickups.is_empty());
+    }
+
+    #[test]
+    fn king_hp_scale_and_combo_match_original_final_override() {
+        let mut w=World::new(HeroClass::Huntress);
+        w.switch_map(MapId::DarkForest,70.0);
+        w.spawn_boss();
+        let boss=&w.enemies[0];
+        assert_eq!(boss.kind,62);
+        assert_eq!(boss.scale,1.4);
+        assert_eq!(boss.base_speed,0.65);
+        let level=boss.level as f32;
+        assert_eq!(boss.hp,((25.0+level*18.0)*17.0).round());
+        w.enemies[0].x=w.player.x+35.0;
+        w.enemies[0].y=w.player.y;
+        w.update_enemy_ai();
+        assert_eq!(w.enemies[0].king_state,KingState::Combo);
+        for _ in 0..12 {w.update_enemy_ai();}
+        assert_eq!(w.enemies[0].king_pose,"s1");
     }
 
 }

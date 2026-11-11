@@ -202,8 +202,9 @@ fn enemy(e:&realm_core::Enemy,cam:f32,t:u64,assets:&Assets){
     } else if e.kind==60 || e.kind==61 {(t/8%4) as usize}
     else {(t/12%2) as usize};
     let sprite=if e.kind==62 {
-        if e.attack>0 {assets.king("s1",(t/5%2) as usize)}
-        else {assets.king("w",(t/8%4) as usize)}
+        let frame=if e.king_pose=="w" {(t/8%4) as usize}
+            else {(t/18%2) as usize};
+        assets.king(e.king_pose,frame).or_else(||assets.enemy(e.kind,0))
     } else if (40..=49).contains(&e.kind) && e.attack>0 {
         assets.humanoid_attack(e.kind,(t/5%3) as usize)
     } else {assets.enemy(e.kind,anim_frame)};
