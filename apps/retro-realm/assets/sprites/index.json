@@ -1,0 +1,446 @@
+{
+  "hero_0_0": {
+    "width": 42,
+    "height": 52,
+    "ax": 18,
+    "ay": 50
+  },
+  "hero_0_1": {
+    "width": 42,
+    "height": 52,
+    "ax": 18,
+    "ay": 50
+  },
+  "hero_0_2": {
+    "width": 42,
+    "height": 52,
+    "ax": 18,
+    "ay": 50
+  },
+  "hero_0_3": {
+    "width": 42,
+    "height": 52,
+    "ax": 18,
+    "ay": 50
+  },
+  "hero_0_4": {
+    "width": 42,
+    "height": 52,
+    "ax": 18,
+    "ay": 50
+  },
+  "hero_0_5": {
+    "width": 42,
+    "height": 52,
+    "ax": 18,
+    "ay": 50
+  },
+  "hero_0_6": {
+    "width": 42,
+    "height": 52,
+    "ax": 18,
+    "ay": 50
+  },
+  "hero_0_7": {
+    "width": 42,
+    "height": 52,
+    "ax": 18,
+    "ay": 50
+  },
+  "hero_0_8": {
+    "width": 42,
+    "height": 52,
+    "ax": 18,
+    "ay": 50
+  },
+  "hero_attack_0_0": {
+    "width": 42,
+    "height": 52,
+    "ax": 18,
+    "ay": 50
+  },
+  "hero_attack_0_1": {
+    "width": 42,
+    "height": 52,
+    "ax": 18,
+    "ay": 50
+  },
+  "hero_attack_0_2": {
+    "width": 42,
+    "height": 52,
+    "ax": 18,
+    "ay": 50
+  },
+  "hero_1_0": {
+    "width": 42,
+    "height": 52,
+    "ax": 18,
+    "ay": 50
+  },
+  "hero_1_1": {
+    "width": 42,
+    "height": 52,
+    "ax": 18,
+    "ay": 50
+  },
+  "hero_1_2": {
+    "width": 42,
+    "height": 52,
+    "ax": 18,
+    "ay": 50
+  },
+  "hero_1_3": {
+    "width": 42,
+    "height": 52,
+    "ax": 18,
+    "ay": 50
+  },
+  "hero_1_4": {
+    "width": 42,
+    "height": 52,
+    "ax": 18,
+    "ay": 50
+  },
+  "hero_1_5": {
+    "width": 42,
+    "height": 52,
+    "ax": 18,
+    "ay": 50
+  },
+  "hero_1_6": {
+    "width": 42,
+    "height": 52,
+    "ax": 18,
+    "ay": 50
+  },
+  "hero_1_7": {
+    "width": 42,
+    "height": 52,
+    "ax": 18,
+    "ay": 50
+  },
+  "hero_1_8": {
+    "width": 42,
+    "height": 52,
+    "ax": 18,
+    "ay": 50
+  },
+  "hero_attack_1_0": {
+    "width": 42,
+    "height": 52,
+    "ax": 18,
+    "ay": 50
+  },
+  "hero_attack_1_1": {
+    "width": 42,
+    "height": 52,
+    "ax": 18,
+    "ay": 50
+  },
+  "hero_attack_1_2": {
+    "width": 42,
+    "height": 52,
+    "ax": 18,
+    "ay": 50
+  },
+  "hero_2_0": {
+    "width": 42,
+    "height": 52,
+    "ax": 18,
+    "ay": 50
+  },
+  "hero_2_1": {
+    "width": 42,
+    "height": 52,
+    "ax": 18,
+    "ay": 50
+  },
+  "hero_2_2": {
+    "width": 42,
+    "height": 52,
+    "ax": 18,
+    "ay": 50
+  },
+  "hero_2_3": {
+    "width": 42,
+    "height": 52,
+    "ax": 18,
+    "ay": 50
+  },
+  "hero_2_4": {
+    "width": 42,
+    "height": 52,
+    "ax": 18,
+    "ay": 50
+  },
+  "hero_2_5": {
+    "width": 42,
+    "height": 52,
+    "ax": 18,
+    "ay": 50
+  },
+  "hero_2_6": {
+    "width": 42,
+    "height": 52,
+    "ax": 18,
+    "ay": 50
+  },
+  "hero_2_7": {
+    "width": 42,
+    "height": 52,
+    "ax": 18,
+    "ay": 50
+  },
+  "hero_2_8": {
+    "width": 42,
+    "height": 52,
+    "ax": 18,
+    "ay": 50
+  },
+  "hero_attack_2_0": {
+    "width": 42,
+    "height": 52,
+    "ax": 18,
+    "ay": 50
+  },
+  "hero_attack_2_1": {
+    "width": 42,
+    "height": 52,
+    "ax": 18,
+    "ay": 50
+  },
+  "hero_attack_2_2": {
+    "width": 42,
+    "height": 52,
+    "ax": 18,
+    "ay": 50
+  },
+  "enemy_0_0": {
+    "width": 28,
+    "height": 20,
+    "ax": 14,
+    "ay": 19
+  },
+  "enemy_0_1": {
+    "width": 28,
+    "height": 20,
+    "ax": 14,
+    "ay": 19
+  },
+  "enemy_1_0": {
+    "width": 32,
+    "height": 36,
+    "ax": 16,
+    "ay": 35
+  },
+  "enemy_1_1": {
+    "width": 32,
+    "height": 36,
+    "ax": 16,
+    "ay": 35
+  },
+  "enemy_2_0": {
+    "width": 34,
+    "height": 36,
+    "ax": 17,
+    "ay": 35
+  },
+  "enemy_2_1": {
+    "width": 34,
+    "height": 36,
+    "ax": 17,
+    "ay": 35
+  },
+  "enemy_3_0": {
+    "width": 36,
+    "height": 22,
+    "ax": 18,
+    "ay": 21
+  },
+  "enemy_3_1": {
+    "width": 36,
+    "height": 22,
+    "ax": 18,
+    "ay": 21
+  },
+  "enemy_4_0": {
+    "width": 32,
+    "height": 38,
+    "ax": 16,
+    "ay": 37
+  },
+  "enemy_4_1": {
+    "width": 32,
+    "height": 38,
+    "ax": 16,
+    "ay": 37
+  },
+  "enemy_5_0": {
+    "width": 56,
+    "height": 60,
+    "ax": 28,
+    "ay": 59
+  },
+  "enemy_5_1": {
+    "width": 56,
+    "height": 60,
+    "ax": 28,
+    "ay": 59
+  },
+  "enemy_6_0": {
+    "width": 32,
+    "height": 26,
+    "ax": 16,
+    "ay": 25
+  },
+  "enemy_6_1": {
+    "width": 32,
+    "height": 26,
+    "ax": 16,
+    "ay": 25
+  },
+  "enemy_7_0": {
+    "width": 32,
+    "height": 26,
+    "ax": 16,
+    "ay": 25
+  },
+  "enemy_7_1": {
+    "width": 32,
+    "height": 26,
+    "ax": 16,
+    "ay": 25
+  },
+  "enemy_8_0": {
+    "width": 32,
+    "height": 26,
+    "ax": 16,
+    "ay": 25
+  },
+  "enemy_8_1": {
+    "width": 32,
+    "height": 26,
+    "ax": 16,
+    "ay": 25
+  },
+  "enemy_9_0": {
+    "width": 32,
+    "height": 26,
+    "ax": 16,
+    "ay": 25
+  },
+  "enemy_9_1": {
+    "width": 32,
+    "height": 26,
+    "ax": 16,
+    "ay": 25
+  },
+  "enemy_10_0": {
+    "width": 32,
+    "height": 26,
+    "ax": 16,
+    "ay": 25
+  },
+  "enemy_10_1": {
+    "width": 32,
+    "height": 26,
+    "ax": 16,
+    "ay": 25
+  },
+  "enemy_12_0": {
+    "width": 42,
+    "height": 52,
+    "ax": 18,
+    "ay": 50
+  },
+  "enemy_12_1": {
+    "width": 42,
+    "height": 52,
+    "ax": 18,
+    "ay": 50
+  },
+  "enemy_13_0": {
+    "width": 42,
+    "height": 52,
+    "ax": 18,
+    "ay": 50
+  },
+  "enemy_13_1": {
+    "width": 42,
+    "height": 52,
+    "ax": 18,
+    "ay": 50
+  },
+  "enemy_14_0": {
+    "width": 42,
+    "height": 52,
+    "ax": 18,
+    "ay": 50
+  },
+  "enemy_14_1": {
+    "width": 42,
+    "height": 52,
+    "ax": 18,
+    "ay": 50
+  },
+  "enemy_15_0": {
+    "width": 42,
+    "height": 52,
+    "ax": 18,
+    "ay": 50
+  },
+  "enemy_15_1": {
+    "width": 42,
+    "height": 52,
+    "ax": 18,
+    "ay": 50
+  },
+  "terrain_grass_0": {
+    "width": 16,
+    "height": 16,
+    "ax": 0,
+    "ay": 0
+  },
+  "terrain_grass_1": {
+    "width": 16,
+    "height": 16,
+    "ax": 0,
+    "ay": 0
+  },
+  "terrain_grass_2": {
+    "width": 16,
+    "height": 16,
+    "ax": 0,
+    "ay": 0
+  },
+  "terrain_grass_3": {
+    "width": 16,
+    "height": 16,
+    "ax": 0,
+    "ay": 0
+  },
+  "terrain_soil_0": {
+    "width": 16,
+    "height": 16,
+    "ax": 0,
+    "ay": 0
+  },
+  "terrain_soil_1": {
+    "width": 16,
+    "height": 16,
+    "ax": 0,
+    "ay": 0
+  },
+  "terrain_soil_2": {
+    "width": 16,
+    "height": 16,
+    "ax": 0,
+    "ay": 0
+  },
+  "terrain_soil_3": {
+    "width": 16,
+    "height": 16,
+    "ax": 0,
+    "ay": 0
+  }
+}
