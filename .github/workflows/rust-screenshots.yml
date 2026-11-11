@@ -6,6 +6,8 @@ on:
     paths:
       - 'apps/retro-realm/src/ui.rs'
       - 'apps/retro-realm/src/scenery.rs'
+      - 'apps/retro-realm/assets/sprites/ui_font_atlas.png'
+      - 'apps/retro-realm/assets/sprites/scene_cloud_layout.csv'
       - '.github/workflows/rust-screenshots.yml'
 permissions:
   contents: read
