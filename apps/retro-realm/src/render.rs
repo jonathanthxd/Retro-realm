@@ -222,11 +222,7 @@ fn terrain(w: &World, vw: f32, cam: f32, assets: &Assets) {
                 },
             );
         }
-        if let Some(tile) = assets.soil((pattern as usize >> 2) % 4, dark) {
-            // Cada capa bajo tierra utiliza un patrón diferente.
-            // La textura de cada fila se selecciona abajo por hs(col)+profundidad.
-            let _=tile;
-        }
+        // Patrón de cada fila = (hs(col) >> 2) + profundidad.
         for yy in ((y / 16.0) as i32 + 1)..14 {
             let row=yy-((y/16.0) as i32);
             if let Some(tile)=assets.soil((((pattern >> 2) as usize)+row as usize)&3,dark){
