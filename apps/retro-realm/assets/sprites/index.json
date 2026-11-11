@@ -1667,6 +1667,282 @@
     "ax": 0,
     "ay": 0
   },
+  "scene_moon": {
+    "width": 36,
+    "height": 36,
+    "ax": 0,
+    "ay": 0
+  },
+  "scene_sky_0": {
+    "width": 320,
+    "height": 180,
+    "ax": 0,
+    "ay": 0
+  },
+  "scene_mf_0": {
+    "width": 1024,
+    "height": 180,
+    "ax": 0,
+    "ay": 0
+  },
+  "scene_mn_0": {
+    "width": 1024,
+    "height": 180,
+    "ax": 0,
+    "ay": 0
+  },
+  "scene_ff_0": {
+    "width": 1024,
+    "height": 180,
+    "ax": 0,
+    "ay": 0
+  },
+  "scene_fm_0": {
+    "width": 1024,
+    "height": 180,
+    "ax": 0,
+    "ay": 0
+  },
+  "scene_cloud_0_0": {
+    "width": 84,
+    "height": 26,
+    "ax": 0,
+    "ay": 0
+  },
+  "scene_cloud_0_1": {
+    "width": 120,
+    "height": 32,
+    "ax": 0,
+    "ay": 0
+  },
+  "scene_cloud_0_2": {
+    "width": 60,
+    "height": 20,
+    "ax": 0,
+    "ay": 0
+  },
+  "scene_cloud_0_3": {
+    "width": 150,
+    "height": 36,
+    "ax": 0,
+    "ay": 0
+  },
+  "scene_sky_1": {
+    "width": 320,
+    "height": 180,
+    "ax": 0,
+    "ay": 0
+  },
+  "scene_mf_1": {
+    "width": 1024,
+    "height": 180,
+    "ax": 0,
+    "ay": 0
+  },
+  "scene_mn_1": {
+    "width": 1024,
+    "height": 180,
+    "ax": 0,
+    "ay": 0
+  },
+  "scene_ff_1": {
+    "width": 1024,
+    "height": 180,
+    "ax": 0,
+    "ay": 0
+  },
+  "scene_fm_1": {
+    "width": 1024,
+    "height": 180,
+    "ax": 0,
+    "ay": 0
+  },
+  "scene_cloud_1_0": {
+    "width": 84,
+    "height": 26,
+    "ax": 0,
+    "ay": 0
+  },
+  "scene_cloud_1_1": {
+    "width": 120,
+    "height": 32,
+    "ax": 0,
+    "ay": 0
+  },
+  "scene_cloud_1_2": {
+    "width": 60,
+    "height": 20,
+    "ax": 0,
+    "ay": 0
+  },
+  "scene_cloud_1_3": {
+    "width": 150,
+    "height": 36,
+    "ax": 0,
+    "ay": 0
+  },
+  "ui_portrait_0": {
+    "width": 64,
+    "height": 64,
+    "ax": 0,
+    "ay": 0
+  },
+  "ui_portrait_1": {
+    "width": 64,
+    "height": 64,
+    "ax": 0,
+    "ay": 0
+  },
+  "ui_portrait_2": {
+    "width": 64,
+    "height": 64,
+    "ax": 0,
+    "ay": 0
+  },
+  "ui_s0_0": {
+    "width": 112,
+    "height": 112,
+    "ax": 0,
+    "ay": 0
+  },
+  "ui_s1_0": {
+    "width": 112,
+    "height": 112,
+    "ax": 0,
+    "ay": 0
+  },
+  "ui_s2_0": {
+    "width": 112,
+    "height": 112,
+    "ax": 0,
+    "ay": 0
+  },
+  "ui_s3_0": {
+    "width": 24,
+    "height": 24,
+    "ax": 0,
+    "ay": 0
+  },
+  "ui_bj_0": {
+    "width": 128,
+    "height": 128,
+    "ax": 0,
+    "ay": 0
+  },
+  "ui_bm_0": {
+    "width": 112,
+    "height": 112,
+    "ax": 0,
+    "ay": 0
+  },
+  "ui_bl_0": {
+    "width": 112,
+    "height": 112,
+    "ax": 0,
+    "ay": 0
+  },
+  "ui_br_0": {
+    "width": 112,
+    "height": 112,
+    "ax": 0,
+    "ay": 0
+  },
+  "ui_s0_1": {
+    "width": 112,
+    "height": 112,
+    "ax": 0,
+    "ay": 0
+  },
+  "ui_s1_1": {
+    "width": 112,
+    "height": 112,
+    "ax": 0,
+    "ay": 0
+  },
+  "ui_s2_1": {
+    "width": 112,
+    "height": 112,
+    "ax": 0,
+    "ay": 0
+  },
+  "ui_s3_1": {
+    "width": 24,
+    "height": 24,
+    "ax": 0,
+    "ay": 0
+  },
+  "ui_bj_1": {
+    "width": 128,
+    "height": 128,
+    "ax": 0,
+    "ay": 0
+  },
+  "ui_bm_1": {
+    "width": 112,
+    "height": 112,
+    "ax": 0,
+    "ay": 0
+  },
+  "ui_bl_1": {
+    "width": 112,
+    "height": 112,
+    "ax": 0,
+    "ay": 0
+  },
+  "ui_br_1": {
+    "width": 112,
+    "height": 112,
+    "ax": 0,
+    "ay": 0
+  },
+  "ui_s0_2": {
+    "width": 112,
+    "height": 112,
+    "ax": 0,
+    "ay": 0
+  },
+  "ui_s1_2": {
+    "width": 112,
+    "height": 112,
+    "ax": 0,
+    "ay": 0
+  },
+  "ui_s2_2": {
+    "width": 112,
+    "height": 112,
+    "ax": 0,
+    "ay": 0
+  },
+  "ui_s3_2": {
+    "width": 24,
+    "height": 24,
+    "ax": 0,
+    "ay": 0
+  },
+  "ui_bj_2": {
+    "width": 128,
+    "height": 128,
+    "ax": 0,
+    "ay": 0
+  },
+  "ui_bm_2": {
+    "width": 112,
+    "height": 112,
+    "ax": 0,
+    "ay": 0
+  },
+  "ui_bl_2": {
+    "width": 112,
+    "height": 112,
+    "ax": 0,
+    "ay": 0
+  },
+  "ui_br_2": {
+    "width": 112,
+    "height": 112,
+    "ax": 0,
+    "ay": 0
+  },
   "decor_tree_oak": {
     "width": 64,
     "height": 76,
