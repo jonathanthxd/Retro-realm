@@ -88,9 +88,14 @@ impl Music {
 #[macroquad::main(config)]
 async fn main() {
     macroquad::file::set_pc_assets_folder("apps/retro-realm/assets");
+    // Solo para QA local / GitHub Actions; no se ejecuta en un APK normal.
+    let snapshot=std::env::var("RETRO_REALM_SNAPSHOT").ok();
+    let mut snapshot_frames=0u32;
     let assets = assets::Assets::load().await;
-    let mut music = Music::load().await;
-    let sounds = Sfx::load().await;
+    let mut music = if snapshot.is_some() {
+        Music{menu:None,forest:None,night:None,boss:None,active:-1}
+    } else { Music::load().await };
+    let sounds = if snapshot.is_some() {Sfx::silent()}else{Sfx::load().await};
     let mut audio_enabled = true;
     let mut chosen = HeroClass::LunarMage;
     let mut home_page = ui::HomePage::Landing;
@@ -98,6 +103,14 @@ async fn main() {
     let mut editing_name = false;
     let mut world = World::new(chosen);
     let mut screen = Screen::Home;
+    if let Some(kind)=snapshot.as_deref(){
+        match kind {
+            "selection"=>home_page=ui::HomePage::Selection,
+            "night"=>screen=Screen::Playing,
+            "dark"=>{screen=Screen::Playing;world.map=MapId::DarkForest;},
+            _=>{}
+        }
+    }
     let mut viewport_width = 320u32;
     let mut target = render_target(viewport_width, 180);
     target.texture.set_filter(FilterMode::Nearest);
@@ -248,6 +261,16 @@ async fn main() {
                 ..Default::default()
             },
         );
+        if let Some(kind)=snapshot.as_deref(){
+            snapshot_frames+=1;
+            if snapshot_frames>=12 {
+                let dir="native-captures";
+                if std::fs::create_dir_all(dir).is_ok(){
+                    get_screen_data().export_png(&format!("{}/{}.png",dir,kind));
+                }
+                break;
+            }
+        }
         next_frame().await;
     }
 }

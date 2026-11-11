@@ -9,6 +9,7 @@ impl Cue {
     fn index(self)->usize {self as usize}
 }
 pub struct Sfx { clips:Vec<Option<Sound>> }
+impl Sfx { pub fn silent()->Self {Self{clips:Vec::new()}} }
 impl Sfx {
     pub async fn load()->Self {
         let mut clips=Vec::new();

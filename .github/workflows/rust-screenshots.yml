@@ -1,0 +1,39 @@
+name: Rust / Macroquad — capturas visuales nativas
+on:
+  workflow_dispatch:
+  push:
+    branches: [refactor/rust-macroquad-migration]
+    paths:
+      - 'apps/retro-realm/src/ui.rs'
+      - 'apps/retro-realm/src/scenery.rs'
+      - '.github/workflows/rust-screenshots.yml'
+permissions:
+  contents: read
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: OpenGL software / Xvfb
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb xauth libasound2-dev libudev-dev libx11-dev libxi-dev libgl1-mesa-dev pkg-config
+      - name: Compilar ejecutable nativo
+        run: cargo build -p retro-realm
+      - name: Capturar cuatro estados nativos (960x540)
+        run: |
+          mkdir -p native-captures
+          export LIBGL_ALWAYS_SOFTWARE=1
+          for scene in menu selection night dark; do
+            echo "Capturando $scene"
+            RETRO_REALM_SNAPSHOT="$scene" xvfb-run -a -s "-screen 0 960x540x24" timeout 80s ./target/debug/retro-realm
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: RetroRealm-Rust-Visual-Previews
+          path: native-captures/*.png
+          if-no-files-found: error
+          retention-days: 14
