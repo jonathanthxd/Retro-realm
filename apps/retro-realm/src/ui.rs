@@ -109,20 +109,23 @@ pub fn draw_home(
         button(r.x,r.y,r.w,r.h,"JUGAR",assets);
     }else{
         draw_rectangle(0.0,0.0,vw,180.0,rgba(0,0,0,175));
-        font_centered(assets,"ELEGIR PERSONAJE",vw/2.0,38.0,21.0,rgb(246,213,110));
+        font_centered(assets,"ELEGIR PERSONAJE",vw/2.0,42.0,10.0,rgb(246,213,110));
+        // Respetar el ajuste multilinea de la tarjeta .cd original.
         let descriptions=[
-            "MISIL / RAYO / NOVA",
-            "CUCHILLOS / ABANICO",
-            "GARRAS / ENERGIA",
+            ("MISIL / RAYO","NOVA"),
+            ("CUCHILLOS","ABANICO"),
+            ("GARRAS","ENERGIA"),
         ];
         for i in 0..3{
             let cl=HeroClass::from_index(i);
             let r=home_selection_rect(i,vw);
             framed(r.x,r.y,r.w,r.h,cl==hero);
             portrait(assets,cl,r.x+13.0,r.y+3.0,24.0,26.0);
-            font_centered(assets,cl.name(),r.x+r.w/2.0,r.y+38.0,6.4,
+            font_centered(assets,cl.name(),r.x+r.w/2.0,r.y+38.0,5.4,
                 if cl==hero{rgb(254,226,144)}else{rgb(220,218,226)});
-            font_centered(assets,descriptions[i],r.x+r.w/2.0,r.y+48.0,5.0,
+            font_centered(assets,descriptions[i].0,r.x+r.w/2.0,r.y+46.5,4.9,
+                rgb(179,189,209));
+            font_centered(assets,descriptions[i].1,r.x+r.w/2.0,r.y+51.8,4.9,
                 rgb(179,189,209));
         }
         let r=home_back_rect(vw);button(r.x,r.y,r.w,r.h,"VOLVER",assets);
