@@ -75,8 +75,14 @@ fn hero(
     dash: bool,
     moving: bool,
     attack: bool,
+    grounded: bool,
+    vy: f32,
+    inv: u16,
+    attack_ticks: u16,
+    cast_ticks: u8,
     assets: &Assets,
 ) {
+    if inv>0 && time%4<2 {return;} // Parpadeo al recibir daño del HTML
     let accent = hero_color(c);
     let anim = (time / 7 % 2) as f32;
     let foot = y - 1.0;
@@ -92,21 +98,37 @@ fn hero(
             );
         }
     }
+    // HF(cl, phase, idle, arm, slash) del drawP() HTML original.
     let sprite = if attack {
-        assets.hero_attack(c, (time / 3 % 3) as usize)
+        assets.hero_attack(c,if attack_ticks>9 {0}else if attack_ticks>4{1}else{2})
+    } else if cast_ticks>0 {
+        assets.hero_cast(c)
+    } else if !grounded {
+        assets.hero(c,if vy<0.0 {9}else{11})
+    } else if moving {
+        assets.hero(c,1 + (time / 3 % 8) as usize)
     } else {
-        assets.hero(
-            c,
-            if moving {
-                1 + (time / 7 % 8) as usize
-            } else {
-                0
-            },
-        )
+        assets.hero_idle(c,(time / 14 % 4) as usize)
     };
     if let Some(texture) = sprite {
-        // El Canvas original tiene punto de apoyo (18, 50) y tamaño 42x52.
+        // Los sprites HF originales tienen ancla (18,50) y frame 42x52.
         let flipped = dir < 0.0;
+        let anchor=18.0;
+        // Estela de la pose original de Mapache Cyber.
+        if c==HeroClass::CyberRaccoon && (moving || !grounded || dash) {
+            for k in [2.0,1.0] {
+                let back=x-dir*k*7.0;
+                let ax=if flipped{texture.width()-anchor}else{anchor};
+                draw_texture_ex(texture,back-ax,y-50.0,
+                    Color::new(1.0,1.0,1.0,0.22/k),
+                    DrawTextureParams{flip_x:flipped,..Default::default()});
+            }
+        }
+        // Aura mágica y lanzamiento del HTML drawP.
+        let glow=if cast_ticks>0 {9.0}else{5.0};
+        draw_circle(x+dir*4.0,y-26.0,glow,if c==HeroClass::LunarMage{
+            rgba(74,240,208,if cast_ticks>0{100}else{35})
+        }else{rgba(255,240,200,if cast_ticks>0{95}else{30})});
         let anchor_x = if flipped {
             texture.width() - 18.0
         } else {
@@ -176,6 +198,9 @@ fn hero(
                 );
             }
         }
+    }
+    if attack {
+        crate::effects::hero_attack_fx(x,y,dir,attack_ticks,c);
     }
     if shield {
         draw_circle(x, y - 17.0, 22.0, rgba(90, 200, 255, 35));
@@ -381,7 +406,7 @@ fn portal(w: &World, x: f32, cam: f32, open: bool) {
         draw_circle(sx, y - 25.0, 6.0, rgb(74, 240, 216));
     }
 }
-fn enemy(e: &realm_core::Enemy, cam: f32, t: u64, assets: &Assets) {
+fn enemy(e: &realm_core::Enemy, cam: f32, t: u64, player_x:f32, assets: &Assets) {
     let x = e.x - cam;
     let y = e.y;
     let scale = e.scale;
@@ -400,41 +425,75 @@ fn enemy(e: &realm_core::Enemy, cam: f32, t: u64, assets: &Assets) {
         if e.attack > 0 {
             0
         } else {
-            1 + (t / 9 % 8) as usize
+            1 + ((t/4+e.x as u64) % 8) as usize
         }
     } else if e.kind == 60 || e.kind == 61 {
-        (t / 8 % 4) as usize
+        ((t / if e.boss {9}else{7}+e.x as u64) % 4) as usize
     } else {
-        (t / 12 % 2) as usize
+        ((t / if (20..40).contains(&e.kind){9}else{12}
+            +e.x as u64) % 2) as usize
     };
-    let sprite = if e.kind == 62 {
-        let frame = if e.king_pose == "w" {
-            (t / 8 % 4) as usize
-        } else {
-            (t / 18 % 2) as usize
-        };
-        assets
-            .king(e.king_pose, frame)
-            .or_else(|| assets.enemy(e.kind, 0))
-    } else if (40..=49).contains(&e.kind) && e.attack > 0 {
-        assets.humanoid_attack(e.kind, (t / 5 % 3) as usize)
-    } else {
-        assets.enemy(e.kind, anim_frame)
+    let (sprite,key): (Option<&Texture2D>,String)=if e.kind==62 {
+        let frame=if e.king_pose=="w" {(t/8%4) as usize}
+            else{(t/18%2) as usize};
+        let key=format!("king_{}_{}",e.king_pose,frame);
+        (assets.king(e.king_pose,frame).or_else(||assets.enemy(62,0)),key)
+    } else if (e.kind==60||e.kind==61) && e.attack>0 {
+        let phase=(1.0-e.attack as f32/36.0).clamp(0.0,1.0);
+        let pose=if phase<0.35{"a"}else if phase<0.7{"s"}else{"r"};
+        (assets.ogre_attack(e.kind,pose).or_else(||assets.enemy(e.kind,anim_frame)),
+            format!("ogre_{}_{}",e.kind,pose))
+    } else if (40..=49).contains(&e.kind) && e.attack>0 {
+        let phase=(1.0-e.attack as f32/30.0).clamp(0.0,1.0);
+        let frame=if phase<0.35{0}else if phase<0.7{1}else{2};
+        (assets.humanoid_attack(e.kind,frame),format!("humanoid_attack_{}_{}",e.kind,frame))
+    }else {
+        (assets.enemy(e.kind,anim_frame),format!("enemy_{}_{}",e.kind,anim_frame))
     };
+    let mut height_for_bar=height;
     if let Some(sprite) = sprite {
-        let sw = sprite.width() * scale;
-        let sh = sprite.height() * scale;
+        let anchor=assets.anchor(&key,vec2(sprite.width()/2.0,sprite.height()-1.0));
+        let mut sx=1.0f32;
+        let mut sy=1.0f32;
+        let mut bob=0.0;
+        if (20..40).contains(&e.kind) {
+            // Squash/stretch + salto de los slimes zEn2.
+            let w=t as f32*0.2+e.x;
+            let jump=(w*0.5).sin().abs();
+            bob=-jump*4.0;
+            sx=1.0+0.14*(1.0-jump)-0.1*jump;
+            sy=1.0-0.14*(1.0-jump)+0.14*jump;
+            if e.attack>0{
+                let phase=(1.0-e.attack as f32/30.0).clamp(0.0,1.0);
+                let compression=(phase*std::f32::consts::PI).sin();
+                sx*=1.0+0.25*compression;
+                sy*=1.0-0.3*compression;
+                bob-=5.0*compression;
+            }
+        }else if e.kind==60||e.kind==61{
+            sy*=1.0+0.012*(t as f32*0.06+e.x).sin();
+        }
+        if e.flash>0 {
+            sx*=1.05;sy*=0.94;
+        }
+        let sw=sprite.width()*scale*sx;
+        let sh=sprite.height()*scale*sy;
+        height_for_bar=anchor.y*scale*sy+bob.abs();
+        let flipped=e.facing<0.0;
+        let anchor_x=if flipped {sprite.width()-anchor.x}else{anchor.x};
+        draw_ellipse(x,y+1.0,12.0*scale,2.0,0.0,rgba(0,0,0,90));
         draw_texture_ex(
-            sprite,
-            x - sw / 2.0,
-            y - sh + scale,
-            WHITE,
-            DrawTextureParams {
-                dest_size: Some(vec2(sw, sh)),
-                flip_x: e.facing < 0.0,
+            sprite,x-anchor_x*scale*sx,y+bob*scale-anchor.y*scale*sy,
+            if e.flash>0{rgba(255,217,223,255)}else{WHITE},
+            DrawTextureParams{
+                dest_size:Some(vec2(sw,sh)),flip_x:flipped,
                 ..Default::default()
-            },
+            }
         );
+        if e.flash>0 {
+            draw_circle(x,y-19.0*scale,15.0*scale,
+                rgba(255,240,245,(e.flash.min(6)*10) as u8));
+        }
     } else {
         draw_ellipse(x, y + 1.0, width * 0.4, 3.0, 0.0, rgba(0, 0, 0, 140));
         if e.kind == 0 || (20..=39).contains(&e.kind) {
@@ -500,19 +559,34 @@ fn enemy(e: &realm_core::Enemy, cam: f32, t: u64, assets: &Assets) {
             }
         }
     }
-    let bar_y = y - height - 6.0;
-    draw_rectangle(x - width * 0.5, bar_y, width, 3.0, rgb(14, 13, 20));
-    draw_rectangle(
-        x - width * 0.5,
-        bar_y,
-        width * (e.hp / e.max_hp).clamp(0.0, 1.0),
-        2.0,
-        rgb(220, 68, 74),
-    );
-    if e.boss {
-        centered(e.name(), x, bar_y - 3.0, 9.0, rgb(246, 206, 157));
+    crate::effects::enemy_attack_fx(e,x,t);
+    if !e.boss {
+        // Barra pixel-art definitiva del HTML: borde de dos tonos,
+        // detalle de nivel en el lateral y nombre cercano.
+        let w=22.0;
+        let top=y-height_for_bar-6.0;
+        draw_rectangle(x-w/2.0-1.0,top-1.0,w+2.0,5.0,rgb(12,10,16));
+        draw_rectangle(x-w/2.0,top,w,3.0,rgb(66,70,79));
+        draw_rectangle(x-w/2.0,top,w,1.0,rgb(83,89,103));
+        let fill=(w-2.0)*(e.hp/e.max_hp).clamp(0.0,1.0);
+        if fill>0.0{
+            draw_rectangle(x-w/2.0+1.0,top,fill,3.0,
+                if e.split_on_death&&e.generation==0 {
+                    rgb(216,98,42)
+                } else{rgb(196,48,72)});
+            draw_rectangle(x-w/2.0+1.0,top,fill,1.0,
+                if e.split_on_death&&e.generation==0{
+                    rgb(255,160,94)
+                }else{rgb(238,108,126)});
+        }
+        draw_rectangle(x+w/2.0,top-2.0,7.0,6.0,rgb(12,10,16));
+        draw_rectangle(x+w/2.0+1.0,top-1.0,5.0,4.0,rgb(42,38,48));
+        label(&e.level.to_string(),x+w/2.0+1.5,top+3.0,5.5,rgb(247,207,98));
+        if (e.x-player_x).abs()<70.0{
+            centered(e.name(),x,top-8.0,7.0,rgb(235,213,182));
+        }
     }
-    let _ = t;
+
 }
 fn game_hud(w: &World, vw: f32) {
     panel(5.0, 4.0, 137.0, 34.0);
@@ -603,8 +677,24 @@ fn game_hud(w: &World, vw: f32) {
         centered(&w.message, vw / 2.0, 57.0, 15.0, rgb(250, 202, 99));
     }
 }
+fn vignette(vw:f32) {
+    // Vignette radial aproximada en franjas translúcidas (HTML VG);
+    // se dibuja ANTES del HUD, para mantener la UI legible.
+    for i in 0..12 {
+        let f=(12-i) as f32/12.0;
+        let a=(11.0*f*f).round() as u8;
+        draw_rectangle(i as f32,0.0,1.0,180.0,rgba(0,0,10,a));
+        draw_rectangle(vw-1.0-i as f32,0.0,1.0,180.0,rgba(0,0,10,a));
+    }
+    for i in 0..18 {
+        let f=(18-i) as f32/18.0;
+        let a=(15.0*f*f).round() as u8;
+        draw_rectangle(0.0,i as f32,vw,1.0,rgba(0,0,12,a));
+        draw_rectangle(0.0,179.0-i as f32,vw,1.0,rgba(0,0,12,a));
+    }
+}
 pub fn draw_game(w: &World, vw: f32, assets: &Assets, name:&str,
-    target:&RenderTarget, camera_y:f32) {
+    target:&RenderTarget, camera_y:f32,fx:&crate::effects::VisualFx) {
     // El mundo se mueve verticalmente, pero el HUD y los controles permanecen
     // fijos en coordenadas de la pantalla; el Canvas HTML hace lo mismo.
     push_camera_state();
@@ -631,7 +721,7 @@ pub fn draw_game(w: &World, vw: f32, assets: &Assets, name:&str,
     }
     for e in &w.enemies {
         if (e.x - cam).abs() < vw + 50.0 {
-            enemy(e, cam, w.tick, assets);
+            enemy(e, cam, w.tick, w.player.x, assets);
         }
     }
     hero(
@@ -644,6 +734,7 @@ pub fn draw_game(w: &World, vw: f32, assets: &Assets, name:&str,
         w.player.dash_ticks > 0,
         w.player.moving,
         w.player.melee_ticks > 0,
+        w.player.ground,w.player.vy,w.player.inv,w.player.melee_ticks,fx.cast_ticks,
         assets,
     );
     // Etiqueta flotante sobre el protagonista como en el HTML (#name tag).
@@ -655,10 +746,28 @@ pub fn draw_game(w: &World, vw: f32, assets: &Assets, name:&str,
             ProjectileKind::Explosive => rgb(255, 131, 57),
             ProjectileKind::EnemyArrow => rgb(242, 192, 92),
         };
-        draw_circle(q.x - cam, q.y, q.radius, color);
-        draw_circle(q.x - cam, q.y, (q.radius / 2.0).max(1.0), WHITE);
+        let x=q.x-cam;
+        if matches!(q.kind,ProjectileKind::Knife|ProjectileKind::EnemyArrow) {
+            // Cuchillos y flechas tienen forma y estela como drawKnife().
+            let length=if q.kind==ProjectileKind::Knife{10.0}else{8.0};
+            let dx=if q.vx<0.0{-length}else{length};
+            draw_line(x-dx/2.0,q.y,x+dx/2.0,q.y,2.0,color);
+            draw_line(x+dx/2.0,q.y,x+dx/2.0+q.vx.signum()*2.0,q.y,
+                1.0,WHITE);
+        }else{
+            draw_circle(x,q.y,q.radius,color);
+            draw_circle(x,q.y,(q.radius/2.0).max(1.0),WHITE);
+            for i in 1..4{
+                let fade=0.34/i as f32;
+                draw_circle(x-q.vx*i as f32*1.6,q.y-q.vy*i as f32*1.6,
+                    (q.radius-i as f32*0.6).max(0.3),
+                    Color::new(color.r,color.g,color.b,fade));
+            }
+        }
     }
+    fx.draw_world(cam,assets,vw);
     pop_camera_state();
+    vignette(vw);
     crate::ui::draw_hud(w,vw,assets,name);
     if w.game_over {
         draw_rectangle(0.0, 0.0, vw, 180.0, rgba(0, 0, 0, 195));
