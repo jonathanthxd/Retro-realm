@@ -47,8 +47,35 @@ pub struct Assets {
     ui_icons: HashMap<(String, usize), Texture2D>,
     clouds: Vec<Cloud>,
     font_atlas: Option<Texture2D>,
+    dom_hud: [Option<Texture2D>; 3],
+    dom_buttons: HashMap<(String,usize),Texture2D>,
+    dom_pause: Option<Texture2D>,
+    dom_layout: HashMap<String,Rect>,
+    dom_hud_layout: HashMap<String,Rect>,
 }
 
+async fn dom_texture(name:String)->Option<Texture2D>{
+    match load_texture(&format!("sprites/{}.png",name)).await {
+        Ok(t)=>{t.set_filter(FilterMode::Linear);Some(t)},
+        Err(_)=>None,
+    }
+}
+fn parse_css_rects(csv:&str)->HashMap<String,Rect>{
+    let mut result=HashMap::new();
+    for line in csv.lines(){
+        let parts:Vec<&str>=line.split(',').collect();
+        if parts.len()!=5{continue;}
+        if let (Ok(x),Ok(y),Ok(w),Ok(h))=(
+            parts[1].parse::<f32>(),parts[2].parse::<f32>(),
+            parts[3].parse::<f32>(),parts[4].parse::<f32>()
+        ) {
+            if x.is_finite()&&y.is_finite()&&w>0.0&&h>0.0 {
+                result.insert(parts[0].to_string(),Rect::new(x,y,w,h));
+            }
+        }
+    }
+    result
+}
 async fn texture(name: String) -> Option<Texture2D> {
     match load_texture(&format!("sprites/{}.png", name)).await {
         Ok(texture) => {
@@ -84,6 +111,11 @@ impl Assets {
             ui_icons: HashMap::new(),
             clouds: Vec::new(),
             font_atlas: None,
+            dom_hud: std::array::from_fn(|_| None),
+            dom_buttons: HashMap::new(),
+            dom_pause: None,
+            dom_layout: HashMap::new(),
+            dom_hud_layout: HashMap::new(),
         };
         // Metadatos de anclaje de los Canvas originales (ax/ay).
         if let Ok(csv)=macroquad::file::load_string("sprites/sprite_meta.csv").await {
@@ -168,6 +200,23 @@ impl Assets {
             result.chests[i] = texture(format!("chest_{}", i)).await;
         }
         result.font_atlas=texture("ui_font_atlas".to_string()).await;
+        // El HTML compone la UI en DOM/CSS a resolución de pantalla. Estas
+        // capturas conservan bordes, iconos y sombras sin redibujarlos en 320px.
+        if let Ok(csv)=macroquad::file::load_string("sprites/ui_dom_layout.csv").await {
+            result.dom_layout=parse_css_rects(&csv);
+        }
+        if let Ok(csv)=macroquad::file::load_string("sprites/ui_hud_layout.csv").await {
+            result.dom_hud_layout=parse_css_rects(&csv);
+        }
+        for cl in 0..3 {
+            result.dom_hud[cl]=dom_texture(format!("ui_hd2_{}",cl)).await;
+            for id in ["bl","br","s0","s1","s2","s3","bs","bj","bm","ap"] {
+                if let Some(t)=dom_texture(format!("ui_dom_{}_{}",id,cl)).await {
+                    result.dom_buttons.insert((id.to_string(),cl),t);
+                }
+            }
+        }
+        result.dom_pause=dom_texture("ui_dom_pause".to_string()).await;
         for cl in 0..3 {
             result.portraits[cl] = texture(format!("ui_portrait_{}",cl)).await;
             for id in ["s0","s1","s2","s3","bj","bm","bl","br"] {
@@ -235,6 +284,24 @@ impl Assets {
             }
         }
         result
+    }
+    pub fn has_native_hud(&self)->bool {
+        self.dom_hud[0].is_some()
+            && self.dom_layout.contains_key("bl")
+            && self.dom_hud_layout.contains_key("frame")
+    }
+    pub fn dom_hud(&self,hero:HeroClass)->Option<&Texture2D>{
+        self.dom_hud[Self::class_index(hero)].as_ref()
+    }
+    pub fn dom_button(&self,id:&str,hero:HeroClass)->Option<&Texture2D>{
+        self.dom_buttons.get(&(id.to_string(),Self::class_index(hero)))
+    }
+    pub fn dom_pause(&self)->Option<&Texture2D>{self.dom_pause.as_ref()}
+    pub fn dom_layout(&self,id:&str)->Option<Rect>{
+        self.dom_layout.get(id).copied()
+    }
+    pub fn dom_hud_layout(&self,id:&str)->Option<Rect>{
+        self.dom_hud_layout.get(id).copied()
     }
     pub fn font_atlas(&self)->Option<&Texture2D> {self.font_atlas.as_ref()}
     pub fn clouds(&self)->&[Cloud] {&self.clouds}
