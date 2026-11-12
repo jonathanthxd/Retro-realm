@@ -289,6 +289,35 @@ try {
   }
   await writeFile(path.join(dest,'ui_dom_layout.csv'),uiLayout.join('\n')+'\n');
   await writeFile(path.join(dest,'ui_hud_layout.csv'),hudLayout.join('\n')+'\n');
+  // Exportación exacta del panel de PAUSA del DOM original.
+  // Se dibujará como superposición nativa sobre el mundo ya escalado.
+  const pausePanel=page.locator('#pzp');
+  if(await pausePanel.count()){
+    await page.evaluate(()=>{
+      const el=document.getElementById('pz');
+      el.style.display='flex';
+      el.style.visibility='visible';
+    });
+    await pausePanel.screenshot({
+      path:path.join(dest,'ui_pause_panel.png'),
+      omitBackground:true,animations:'disabled'
+    });
+    const rows=await page.evaluate(()=>{
+      const controls={
+        frame:'#pzp',resume:'#pc',menu:'#pm',music:'#rmv',
+        sound:'#rsv',edit:'#pe',reset:'#pr',character:'#pcs',
+        style0:'[data-ms="0"]',style1:'[data-ms="1"]',style2:'[data-ms="2"]',
+        buttons:'[data-ct="btn"]',joystick:'[data-ct="joy"]'
+      };
+      return Object.entries(controls).map(([key,selector])=>{
+        const r=document.querySelector(selector)?.getBoundingClientRect();
+        return [key,r?.x??0,r?.y??0,r?.width??0,r?.height??0];
+      });
+    });
+    await writeFile(path.join(dest,'ui_pause_layout.csv'),
+      rows.map(r=>r.join(',')).join('\n')+'\n');
+    await page.evaluate(()=>{document.getElementById('pz').style.display='none'});
+  }
   // Separar también las pantallas DOM de Inicio / Selección / Créditos
   // del render target 320x180. Se capturan completas y transparentes.
   const menuPage=await browser.newPage({viewport:{width:960,height:540}});
