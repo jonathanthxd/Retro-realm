@@ -176,6 +176,15 @@ try {
     bg.fillStyle=grad;
     bg.fillRect(0,0,204,204);
     add('fx_torch_bloom',bloom);
+    // Segundo emisor del HTML: zPortal() usa este gradiente aditivo.
+    const portalGlow=document.createElement('canvas');
+    portalGlow.width=portalGlow.height=264;
+    const pg=portalGlow.getContext('2d');
+    const portalGradient=pg.createRadialGradient(132,132,12,132,132,132);
+    portalGradient.addColorStop(0,'rgba(80,240,230,.30)');
+    portalGradient.addColorStop(1,'rgba(80,240,230,0)');
+    pg.fillStyle=portalGradient;pg.fillRect(0,0,264,264);
+    add('fx_portal_bloom',portalGlow);
     // Pictogramas definitivos de los botones, tras aplicar CSS y clases del HTML.
     for(let cl=0;cl<3;cl++){
       p.cls=cl;icons();
