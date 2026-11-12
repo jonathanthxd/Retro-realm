@@ -106,13 +106,29 @@ fn draw_scene_lights(w:&World,assets:&Assets,cam_x:f32,cam_y:f32,world_width:f32
             Color::new(1.0,1.0,1.0,flicker),
             DrawTextureParams{dest_size:Some(vec2(204.0,204.0)),..Default::default()});
     }
+
+    if w.portal_available() {
+        if let Some(portal)=assets.portal_bloom(){
+            let mut draw_portal=|tx:f32|{
+                let sx=(tx-cam_x)/world_width*vw;
+                if sx< -144.0 || sx>vw+144.0 {return;}
+                let sy=(w.floor(tx)-30.0-cam_y.round())*3.0;
+                let pulse=0.85+0.15*(w.tick as f32*0.07+tx).sin().abs();
+                draw_texture_ex(portal,(sx-132.0).round(),(sy-132.0).round(),
+                    Color::new(1.0,1.0,1.0,pulse),
+                    DrawTextureParams{dest_size:Some(vec2(264.0,264.0)),..Default::default()});
+            };
+            draw_portal(5040.0);
+            if w.map==realm_core::MapId::DarkForest {draw_portal(4920.0);}
+        }
+    }
 }
 fn draw_world_name(w:&World,assets:&Assets,name:&str,cam_x:f32,cam_y:f32,
     world_width:f32,vw:f32){
     let sx=(w.player.x-cam_x)/world_width*vw;
-    let sy=(w.player.y-49.0-cam_y.round())*3.0;
+    let sy=(w.player.y-51.0-cam_y.round())*3.0;
     if sx>0.0 && sx<vw && sy>7.0 && sy<540.0 {
-        native_outlined(assets,name,sx.round(),sy.round(),21.0,rgb(245,215,125));
+        native_outlined(assets,name,sx.round(),sy.round(),29.0,rgb(245,215,125));
     }
 }
 fn draw_hud(world:&World,assets:&Assets,name:&str){
