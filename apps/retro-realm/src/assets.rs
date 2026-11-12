@@ -47,6 +47,9 @@ pub struct Assets {
     ui_icons: HashMap<(String, usize), Texture2D>,
     clouds: Vec<Cloud>,
     font_atlas: Option<Texture2D>,
+    font_atlas_hi: Option<Texture2D>,
+    font_advances: Vec<f32>,
+    torch_bloom: Option<Texture2D>,
     dom_hud: [Option<Texture2D>; 3],
     dom_buttons: HashMap<(String,usize),Texture2D>,
     dom_pause: Option<Texture2D>,
@@ -117,6 +120,9 @@ impl Assets {
             ui_icons: HashMap::new(),
             clouds: Vec::new(),
             font_atlas: None,
+            font_atlas_hi: None,
+            font_advances: Vec::new(),
+            torch_bloom: None,
             dom_hud: std::array::from_fn(|_| None),
             dom_buttons: HashMap::new(),
             dom_pause: None,
@@ -212,6 +218,12 @@ impl Assets {
             result.chests[i] = texture(format!("chest_{}", i)).await;
         }
         result.font_atlas=texture("ui_font_atlas".to_string()).await;
+        result.font_atlas_hi=dom_texture("ui_font_atlas_hi".to_string()).await;
+        if let Ok(csv)=macroquad::file::load_string("sprites/ui_font_advance.csv").await {
+            result.font_advances=csv.trim().split(',').filter_map(|v|v.parse::<f32>().ok())
+                .filter(|v|v.is_finite()&&*v>0.0).collect();
+        }
+        result.torch_bloom=dom_texture("fx_torch_bloom".to_string()).await;
         // El HTML compone la UI en DOM/CSS a resolución de pantalla. Estas
         // capturas conservan bordes, iconos y sombras sin redibujarlos en 320px.
         if let Ok(csv)=macroquad::file::load_string("sprites/ui_dom_layout.csv").await {
@@ -349,6 +361,9 @@ impl Assets {
         self.dom_hud_layout.get(id).copied()
     }
     pub fn font_atlas(&self)->Option<&Texture2D> {self.font_atlas.as_ref()}
+    pub fn font_atlas_hi(&self)->Option<&Texture2D> {self.font_atlas_hi.as_ref()}
+    pub fn glyph_advance(&self,idx:usize)->Option<f32>{self.font_advances.get(idx).copied()}
+    pub fn torch_bloom(&self)->Option<&Texture2D>{self.torch_bloom.as_ref()}
     pub fn clouds(&self)->&[Cloud] {&self.clouds}
     pub fn scene(&self,key:&str)->Option<&Texture2D> {
         self.scene_layers.get(key)
