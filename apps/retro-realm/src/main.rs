@@ -1,6 +1,7 @@
 //! Aplicación nativa, sin WebView. El núcleo \`realm-core\` sigue siendo puro Rust.
 mod assets;
 mod controls;
+mod effects;
 mod render;
 mod scenery;
 mod ui;
@@ -10,6 +11,7 @@ use macroquad::audio::{load_sound, play_sound, stop_sound, PlaySoundParams, Soun
 use macroquad::prelude::*;
 use realm_core::{HeroClass, Input, MapId, World, TICK_RATE};
 use sfx::{Cue,Sfx};
+use effects::{FrameSnapshot,VisualFx};
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Screen {
@@ -102,6 +104,7 @@ async fn main() {
     let mut player_name = String::from("Jugador");
     let mut editing_name = false;
     let mut world = World::new(chosen);
+    let mut effects=VisualFx::default();
     let mut screen = Screen::Home;
     if let Some(kind)=snapshot.as_deref(){
         match kind {
@@ -145,6 +148,7 @@ async fn main() {
                         editing_name=true;
                     } else if ui::home_play_rect(virtual_width).contains(point){
                         world=World::new(chosen);
+                        effects.clear();
                         screen=Screen::Playing;
                         camera_y=0.0;
                         editing_name=false;
@@ -176,6 +180,7 @@ async fn main() {
             } else if home_page==ui::HomePage::Landing
                 && (is_key_pressed(KeyCode::Enter)||is_key_pressed(KeyCode::Space)) {
                 world=World::new(chosen);
+                effects.clear();
                 screen=Screen::Playing;
                 camera_y=0.0;
                 accumulator=0.0;
@@ -193,6 +198,7 @@ async fn main() {
                 if controls::sound_hit(virtual_width) {audio_enabled=!audio_enabled;}
                 if is_key_pressed(KeyCode::H) || controls::menu_hit(virtual_width) {
                     screen = Screen::Home;
+                    effects.clear();
                     home_page = ui::HomePage::Landing;
                     accumulator = 0.0;
                 }
@@ -201,6 +207,7 @@ async fn main() {
                     && (is_key_pressed(KeyCode::R) || controls::restart_hit(virtual_width))
                 {
                     world.reset();
+                    effects.clear();
                 }
                 let current = controls::game_input(virtual_width, &world);
                 pending.movement = current.movement;
@@ -218,7 +225,7 @@ async fn main() {
                 let step = 1.0 / TICK_RATE;
                 let mut cycles = 0;
                 while accumulator >= step && cycles < 6 {
-                    tick_with_audio(&mut world,pending,&sounds,audio_enabled);
+                    tick_with_audio(&mut world,pending,&sounds,audio_enabled,&mut effects);
                     pending = Input::default();
                     accumulator -= step;
                     cycles += 1;
@@ -241,7 +248,7 @@ async fn main() {
         match screen {
             Screen::Home => ui::draw_home(&world,virtual_width,chosen,home_page,&player_name,
                 world.player.level,&assets),
-            Screen::Playing => render::draw_game(&world,virtual_width,&assets,&player_name,&target,camera_y),
+            Screen::Playing => render::draw_game(&world,virtual_width,&assets,&player_name,&target,camera_y,&effects),
             Screen::Paused => {
                 render::draw_game(&world,virtual_width,&assets,&player_name,&target,camera_y);
                 ui::draw_pause(virtual_width,audio_enabled);
@@ -276,7 +283,8 @@ async fn main() {
 }
 
 
-fn tick_with_audio(world: &mut World, input: Input, sounds: &Sfx, audio_enabled: bool) {
+fn tick_with_audio(world: &mut World, input: Input, sounds: &Sfx, audio_enabled: bool,fx:&mut VisualFx) {
+    let before=FrameSnapshot::capture(world);
     let hp=world.player.hp;
     let level=world.player.level;
     let y=world.player.y;
@@ -289,6 +297,7 @@ fn tick_with_audio(world: &mut World, input: Input, sounds: &Sfx, audio_enabled:
     let had_boss=world.boss().is_some();
     let opened=world.chests[current_map.index()].iter().filter(|c|c.opened).count();
     world.tick(input);
+    fx.observe(&before,world,input);
     if !audio_enabled {return;}
     if input.jump && world.player.y<y {sounds.play(Cue::Jump);}
     if input.melee && melee==0 && world.player.melee_ticks>0 {sounds.play(Cue::Attack);}
