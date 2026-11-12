@@ -222,6 +222,8 @@ try {
   const rects=await page.evaluate(()=>{
     const root=document.getElementById('hd2');
     if(!root)throw Error('Final HUD #hd2 not found');
+    document.getElementById('h2m').style.width='100%';
+    document.getElementById('h2h').style.width='100%';
     const targets={frame:'#hd2',name:'#h2n',level:'#h2l',
       hp:'#h2h',mp:'#h2m',hp_text:'#h2ht',mp_text:'#h2mt',
       gold:'#h2g',gems:'#h2d'};
