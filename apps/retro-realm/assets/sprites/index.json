@@ -1931,6 +1931,18 @@
     "ax": 0,
     "ay": 0
   },
+  "ui_font_atlas_hi": {
+    "width": 1024,
+    "height": 504,
+    "ax": 0,
+    "ay": 0
+  },
+  "fx_torch_bloom": {
+    "width": 204,
+    "height": 204,
+    "ax": 0,
+    "ay": 0
+  },
   "ui_s0_0": {
     "width": 112,
     "height": 112,
