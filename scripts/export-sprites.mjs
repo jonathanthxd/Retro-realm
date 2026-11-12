@@ -215,7 +215,8 @@ try {
     '#ctl>*{visibility:hidden}',
     '#hd2{visibility:hidden;display:flex!important}',
     '#hd2 #h2n,#hd2 #h2l,#hd2 #h2mt,#hd2 #h2ht,',
-    '#hd2 #h2g,#hd2 #h2d,#hd2 .fl{visibility:hidden!important}',
+    '#hd2 #h2g,#hd2 #h2d{color:transparent!important;text-shadow:none!important}',
+    '#hd2 .fl{visibility:hidden!important}',
   ].join(' ')});
   const uiLayout=[];
   const hudLayout=[];
