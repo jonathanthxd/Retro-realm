@@ -330,7 +330,7 @@ async fn main() {
             ui_native::draw_home(&assets,chosen,home_page,&player_name,world.player.level);
         }
         if native_ui && screen!=Screen::Home {
-            ui_native::draw_game(&world,&assets,&player_name);
+            ui_native::draw_game(&world,&assets,&player_name,camera_x,camera_y,virtual_width);
             if screen==Screen::Paused {
                 ui_native::draw_pause(&assets,audio_enabled);
             }

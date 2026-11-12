@@ -377,19 +377,23 @@ fn props(w: &World, vw: f32, cam: f32, assets: &Assets) {
             continue;
         }
         let y = w.floor(x);
-        draw_rectangle(sx - 2.0, y - 23.0, 4.0, 22.0, rgb(76, 48, 32));
-        // El Canvas HTML utiliza un resplandor radial amplio en las antorchas.
-        // Cuatro halos transparentes detrás de la llama; sin textura externa.
-        for (rad,alpha) in [(35.0,9),(26.0,13),(18.0,19),(10.0,28)]{
-            draw_circle(sx,y-28.0,rad,rgba(255,156,66,alpha));
+        let px = sx.round();
+        // Exact pixel geometry from zProps() of Retro Realm.html:
+        // dark wood handle, metallic clamp and three dancing flame tones.
+        draw_rectangle(px-1.0,y-22.0,3.0,22.0,rgb(74,48,32));
+        draw_rectangle(px-3.0,y-24.0,7.0,3.0,rgb(90,90,102));
+        draw_rectangle(px-2.0,y-26.0,5.0,3.0,rgb(58,58,68));
+        let flicker=(w.tick as f32*0.3+x).sin()*1.2;
+        let f_y=flicker.round();
+        draw_rectangle(px-2.0,y-31.0+f_y,5.0,5.0,rgb(255,122,32));
+        draw_rectangle(px-1.0,y-34.0+f_y,3.0,4.0,rgb(255,176,48));
+        draw_rectangle(px,y-31.0+f_y,1.0,3.0,rgb(255,244,176));
+        // One ember per 14 ticks, capped and deterministic.
+        if (w.tick+(x as u64)%14)%14==0 {
+            let rise=((w.tick/14+(x as u64)%7)%5) as f32;
+            draw_rectangle(px-1.0+((w.tick/7)%3) as f32,
+                y-36.0-rise,1.0,1.0,rgba(255,180,48,205));
         }
-        draw_circle(sx, y - 27.0, 8.0, rgba(255, 130, 40, 40));
-        draw_triangle(
-            vec2(sx - 4.0, y - 27.0),
-            vec2(sx + 4.0, y - 27.0),
-            vec2(sx, y - 36.0),
-            rgb(255, 182, 47),
-        );
     }
     for chest in &w.chests[mi] {
         let sx = chest.x - cam;
@@ -686,7 +690,9 @@ pub fn draw_game(w: &World, vw: f32, assets: &Assets, name:&str,
         assets,
     );
     // Etiqueta flotante sobre el protagonista como en el HTML (#name tag).
-    crate::ui::draw_player_tag(assets,name,w.player.x-cam,w.player.y-46.0);
+    if legacy_ui {
+        crate::ui::draw_player_tag(assets,name,w.player.x-cam,w.player.y-46.0);
+    }
     for q in &w.projectiles {
         let color = match q.kind {
             ProjectileKind::Orb => rgb(176, 107, 255),
