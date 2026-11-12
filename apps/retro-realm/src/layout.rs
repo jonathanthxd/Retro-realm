@@ -66,6 +66,7 @@ impl UiLayout {
         let size=vec2(r.w*factor,r.h*factor);
         let x=match id {
             "bl"|"br"=>12.0+(r.x-10.0)*factor,
+            "joy"=>12.0+(r.x-18.0)*factor,
             "ap"=>(self.width-size.x)*0.5,
             "pause"=>self.width-12.0-size.x,
             _=>self.width-12.0-(SOURCE_WIDTH-r.x)*factor,

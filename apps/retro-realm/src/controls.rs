@@ -32,7 +32,7 @@ pub fn ui_pressed_points()->Vec<Vec2>{
 pub fn pressed_points(_virtual_width:f32)->Vec<Vec2>{
     ui_pressed_points().into_iter().map(|p|p/3.0).collect()
 }
-fn active_points()->Vec<Vec2>{
+pub fn ui_active_points()->Vec<Vec2>{
     let layout=UiLayout::current();
     let mut points=Vec::new();
     if is_mouse_button_down(MouseButton::Left){
@@ -47,7 +47,7 @@ fn active_points()->Vec<Vec2>{
     points
 }
 fn active_buttons(assets:&Assets,prefs:&ControlPrefs)->Vec<ButtonId>{
-    active_points().into_iter().flat_map(|point|{
+    ui_active_points().into_iter().flat_map(|point|{
         IDS.iter().filter_map(move |(id,key)|{
             if prefs.joystick&&(*key=="bl"||*key=="br"){return None;}
             ui_native::control_hit(assets,key,point,prefs).then_some(*id)
@@ -69,6 +69,24 @@ pub fn menu_hit(vw:f32)->bool {
 pub fn restart_hit(_vw:f32)->bool {
     ui_pressed_points().iter().any(|p|ui_native::defeat_hit(*p))
 }
+pub fn joystick_vector(prefs:&ControlPrefs)->Vec2 {
+    if !prefs.joystick{return Vec2::ZERO;}
+    let layout=UiLayout::current();
+    let base=Rect::new(18.0,414.0,112.0,112.0);
+    let rect=layout.control_rect("joy",base,prefs);
+    let center=vec2(rect.x+rect.w*0.5,rect.y+rect.h*0.5);
+    let radius=(rect.w.min(rect.h)*0.5).max(1.0);
+    for point in ui_active_points() {
+        let delta=point-center;
+        if delta.length()<=radius*1.40 {
+            let fraction=(delta.length()/(radius*0.70)).min(1.0);
+            return if delta.length_squared()>0.001 {
+                delta.normalize()*fraction
+            }else{Vec2::ZERO};
+        }
+    }
+    Vec2::ZERO
+}
 pub fn game_input(assets:&Assets,prefs:&ControlPrefs,w:&World)->Input{
     let buttons=active_buttons(assets,prefs);
     let just=ui_pressed_points();
@@ -77,13 +95,15 @@ pub fn game_input(assets:&Assets,prefs:&ControlPrefs,w:&World)->Input{
         let Some((_,key))=IDS.iter().find(|(candidate,_)|*candidate==id) else{return false;};
         just.iter().any(|p|ui_native::control_hit(assets,key,*p,prefs))
     };
-    let movement=
-        (if is_key_down(KeyCode::D)||is_key_down(KeyCode::Right)||pressed(ButtonId::Right){1.0}else{0.0})
+    let joy=joystick_vector(prefs);
+    let buttons_x=(if is_key_down(KeyCode::D)||is_key_down(KeyCode::Right)||pressed(ButtonId::Right){1.0}else{0.0})
         -(if is_key_down(KeyCode::A)||is_key_down(KeyCode::Left)||pressed(ButtonId::Left){1.0}else{0.0});
+    let movement=if prefs.joystick&&joy.x.abs()>0.35{joy.x.signum()}else{buttons_x};
     Input {
         movement,
         jump:is_key_pressed(KeyCode::Space)||is_key_pressed(KeyCode::W)
-            ||is_key_pressed(KeyCode::Up)||started(ButtonId::Jump),
+            ||is_key_pressed(KeyCode::Up)||started(ButtonId::Jump)
+            ||(prefs.joystick&&joy.y< -0.55),
         melee:is_key_pressed(KeyCode::F)||is_key_pressed(KeyCode::X)
             ||started(ButtonId::Melee),
         skills:[

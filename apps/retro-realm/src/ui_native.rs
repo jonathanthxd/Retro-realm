@@ -191,6 +191,20 @@ fn controls(w:&World,assets:&Assets,layout:&UiLayout,prefs:&ControlPrefs){
         if prefs.joystick&&(id=="bl"||id=="br"){continue;}
         draw_control(assets,id,w.player.class,layout,prefs);
     }
+    if prefs.joystick {
+        let base=Rect::new(18.0,414.0,112.0,112.0);
+        let r=layout.control_rect("joy",base,prefs);
+        let cx=r.x+r.w*0.5;let cy=r.y+r.h*0.5;
+        let outer=r.w.min(r.h)*0.5;
+        draw_circle(cx,cy,outer,rgba(32,39,60,160));
+        draw_circle_lines(cx,cy,outer-4.0,4.0,rgb(239,201,89));
+        draw_circle_lines(cx,cy,outer-12.0,2.0,rgba(220,220,240,175));
+        let dir=crate::controls::joystick_vector(prefs);
+        draw_circle(cx+dir.x*outer*0.45,cy+dir.y*outer*0.45,
+            outer*0.34,rgb(124,130,151));
+        draw_circle_lines(cx+dir.x*outer*0.45,cy+dir.y*outer*0.45,
+            outer*0.34,3.0,rgb(246,216,137));
+    }
     let cds=[
         ("s0",w.player.cooldowns[0],60u16),
         ("s1",w.player.cooldowns[1],120),
