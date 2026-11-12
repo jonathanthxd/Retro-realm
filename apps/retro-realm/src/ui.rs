@@ -42,6 +42,9 @@ fn font_centered(assets:&Assets,s:&str,x:f32,baseline:f32,size:f32,color:Color) 
         left+=adv;
     }
 }
+pub fn draw_world_text(assets:&Assets,label:&str,x:f32,y:f32,size:f32,color:Color){
+    font_centered(assets,label,x,y,size,color);
+}
 pub fn draw_player_tag(assets:&Assets,name:&str,x:f32,y:f32){
     // Nombre flotante amarillo del personaje, permanece en cámara del mundo.
     font_centered(assets,name,x+1.0,y+1.0,10.5,rgba(0,0,0,220));
