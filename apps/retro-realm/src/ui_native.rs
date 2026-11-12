@@ -161,6 +161,58 @@ pub fn draw_game(w:&World,assets:&Assets,name:&str){
     controls(w,assets,vw);
     pop_camera_state();
 }
+/// Pantalla de pausa a resolución CSS. El modal del HTML original mide
+/// máximo 420px, tiene doble borde dorado y fondo acero violeta.
+pub fn draw_pause(assets:&Assets,audio_enabled:bool){
+    push_camera_state();
+    let vw=css_width();
+    set_camera(&Camera2D::from_display_rect(Rect::new(0.0,0.0,vw,540.0)));
+    draw_rectangle(0.0,0.0,vw,540.0,rgba(0,0,0,204));
+    let x=vw*.5-210.0;
+    let y=60.0;
+    let w=420.0;
+    let h=425.0;
+    draw_rectangle(x-2.0,y-2.0,w+4.0,h+4.0,rgb(12,10,16));
+    draw_rectangle(x,y,w,h,rgb(216,170,60));
+    draw_rectangle(x+4.0,y+4.0,w-8.0,h-8.0,rgb(38,36,44));
+    draw_rectangle(x+6.0,y+6.0,w-12.0,87.0,rgb(74,70,80));
+    draw_rectangle(x+6.0,y+90.0,w-12.0,h-96.0,rgb(39,37,46));
+    native_text(assets,"PAUSA",vw*.5,y+35.0,22.0,rgb(245,208,112),true);
+    native_text(assets,"Música",x+27.0,y+82.0,13.0,rgb(246,231,191),false);
+    native_text(assets,"Sonidos",x+27.0,y+132.0,13.0,rgb(246,231,191),false);
+    for (row,val) in [(0,if audio_enabled{0.7}else{0.0}),
+        (1,if audio_enabled{0.8}else{0.0})] {
+        let ry=y+77.0+row as f32*50.0;
+        draw_rectangle(x+182.0,ry-4.0,198.0,16.0,rgb(13,16,29));
+        draw_rectangle(x+187.0,ry+1.0,188.0,6.0,rgb(102,102,120));
+        draw_rectangle(x+187.0,ry+1.0,188.0*val,6.0,rgb(238,203,102));
+        draw_rectangle(x+183.0+188.0*val,ry-3.0,12.0,14.0,rgb(233,213,166));
+    }
+    native_text(assets,"Estilo de música",x+27.0,y+180.0,12.0,rgb(238,227,196),false);
+    native_text(assets,"Épica    Folk    Nocturna",
+        vw*.5+62.0,y+180.0,10.4,rgb(246,216,140),true);
+    native_text(assets,"Controles",x+27.0,y+228.0,12.0,rgb(238,227,196),false);
+    native_text(assets,"Botones    Joystick",
+        vw*.5+75.0,y+228.0,11.0,rgb(246,216,140),true);
+    for (i,label) in ["Mover controles","Restablecer"].iter().enumerate() {
+        let bx=x+12.0+i as f32*204.0;
+        draw_rectangle(bx,y+259.0,194.0,35.0,rgb(52,48,60));
+        draw_rectangle_lines(bx,y+259.0,194.0,35.0,2.0,rgb(139,133,152));
+        native_text(assets,label,bx+97.0,y+275.0,11.0,rgb(244,225,184),true);
+    }
+    draw_rectangle(x+13.0,y+309.0,w-26.0,31.0,rgb(52,48,60));
+    draw_rectangle_lines(x+13.0,y+309.0,w-26.0,31.0,2.0,rgb(139,133,152));
+    native_text(assets,"Cambiar personaje",vw*.5,y+325.0,12.0,rgb(244,225,184),true);
+    for (i,label) in ["Menú principal","Continuar"].iter().enumerate(){
+        let bx=x+13.0+i as f32*199.0;
+        draw_rectangle(bx,y+355.0,193.0,39.0,
+            if i==1 {rgb(87,70,40)}else{rgb(52,48,60)});
+        draw_rectangle_lines(bx,y+355.0,193.0,39.0,2.0,
+            if i==1 {rgb(240,205,91)}else{rgb(139,133,152)});
+        native_text(assets,label,bx+96.5,y+376.0,12.0,rgb(246,230,192),true);
+    }
+    pop_camera_state();
+}
 #[cfg(test)]
 mod tests{
     use super::*;
