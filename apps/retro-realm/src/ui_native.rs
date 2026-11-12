@@ -24,27 +24,61 @@ fn source_glyph(ch:char)->usize {
         chars.chars().position(|c|c==ch).map(|x|95+x).unwrap_or(31)
     }
 }
-fn glyph_width(text:&str,size:f32)->f32 {
-    text.chars().count() as f32 * size*10.2/16.0
+fn glyph_advance(assets:&Assets,ch:char,size:f32)->f32{
+    let idx=source_glyph(ch);
+    // Browser-exported measureText at 48px: exact spacing for narrow
+    // letters (i/l), accents and wide letters (M/W), no fixed steps.
+    assets.glyph_advance(idx).unwrap_or(30.6)*(size/48.0)
+}
+fn glyph_width(assets:&Assets,text:&str,size:f32)->f32 {
+    text.chars().map(|ch|glyph_advance(assets,ch,size)).sum()
 }
 fn native_text(assets:&Assets,txt:&str,x:f32,center_y:f32,size:f32,col:Color,centered:bool){
-    let Some(atlas)=assets.font_atlas() else {
+    if let Some(atlas)=assets.font_atlas_hi(){
+        let scale=size/48.0;
+        let width=glyph_width(assets,txt,size);
+        let mut left=if centered{x-width/2.0}else{x};
+        // Keep each glyph snapped to final CSS pixels. Rasterization happens
+        // at 48px in Chromium; the atlas only receives a final downsample.
+        let top=(center_y-34.0*scale).round();
+        for ch in txt.chars(){
+            let idx=source_glyph(ch);
+            let shift=3.0*scale;
+            draw_texture_ex(atlas,(left-shift).round(),top,col,DrawTextureParams{
+                source:Some(Rect::new((idx%16) as f32*64.0,(idx/16) as f32*72.0,
+                    64.0,72.0)),
+                dest_size:Some(vec2(64.0*scale,72.0*scale)),
+                ..Default::default()
+            });
+            left+=glyph_advance(assets,ch,size);
+        }
+    }else if let Some(atlas)=assets.font_atlas(){
+        // Compatibility for older asset bundles.
+        let scale=size/16.0;
+        let step=size*10.2/16.0;
+        let mut left=if centered{x-step*txt.chars().count() as f32/2.0}else{x};
+        for ch in txt.chars(){
+            let idx=source_glyph(ch);
+            draw_texture_ex(atlas,left.round(),(center_y-10.0*scale).round(),col,
+                DrawTextureParams{
+                    source:Some(Rect::new((idx%16) as f32*18.0,(idx/16) as f32*20.0,
+                        18.0,20.0)),
+                    dest_size:Some(vec2(18.0*scale,20.0*scale)),
+                    ..Default::default()
+                });
+            left+=step;
+        }
+    }else{
         let w=measure_text(txt,None,size as u16,1.0).width;
         draw_text(txt,if centered{x-w/2.0}else{x},center_y+size*0.4,size,col);
-        return;
-    };
-    let scale=size/16.0;
-    let step=size*10.2/16.0;
-    let mut left=if centered{x-glyph_width(txt,size)*0.5}else{x};
-    for ch in txt.chars() {
-        let idx=source_glyph(ch);
-        draw_texture_ex(atlas,left,center_y-10.0*scale,col,DrawTextureParams{
-            source:Some(Rect::new((idx%16) as f32*18.0,(idx/16) as f32*20.0,18.0,20.0)),
-            dest_size:Some(vec2(18.0*scale,20.0*scale)),
-            ..Default::default()
-        });
-        left+=step;
     }
+}
+fn native_outlined(assets:&Assets,text:&str,x:f32,y:f32,size:f32,col:Color){
+    // A crisp, restrained original-style black border for names on scenery.
+    for (dx,dy) in [(-1.0,0.0),(1.0,0.0),(0.0,-1.0),(0.0,1.0)] {
+        native_text(assets,text,x+dx,y+dy,size,rgba(6,9,15,228),true);
+    }
+    native_text(assets,text,x,y,size,col,true);
 }
 fn bar_fill(rect:Rect,fraction:f32,red:bool){
     let amount=(rect.w*fraction.clamp(0.0,1.0)-1.0).max(0.0);
@@ -57,6 +91,29 @@ fn bar_fill(rect:Rect,fraction:f32,red:bool){
     draw_rectangle(x,y,amount,h*0.20,
         if red{rgb(255,122,128)}else{rgb(120,192,255)});
     draw_rectangle(x+3.0,y+1.0,(amount-6.0).max(0.0),1.0,rgba(255,255,255,67));
+}
+fn draw_scene_lights(w:&World,assets:&Assets,cam_x:f32,cam_y:f32,world_width:f32,vw:f32){
+    let Some(glow)=assets.torch_bloom() else{return;};
+    for &tx in realm_core::TORCHES[w.map.index()] {
+        let sx=(tx-cam_x)/world_width*vw;
+        if sx< -112.0 || sx>vw+112.0 {continue;}
+        // Torch bloom center is y-30 in original zProps.
+        let sy=(w.floor(tx)-30.0-cam_y.round())*3.0;
+        if sy< -112.0 || sy>660.0 {continue;}
+        let pulse=(w.tick as f32*0.30+tx).sin();
+        let flicker=(0.94+0.06*pulse).clamp(0.75,1.0);
+        draw_texture_ex(glow,(sx-102.0).round(),(sy-102.0).round(),
+            Color::new(1.0,1.0,1.0,flicker),
+            DrawTextureParams{dest_size:Some(vec2(204.0,204.0)),..Default::default()});
+    }
+}
+fn draw_world_name(w:&World,assets:&Assets,name:&str,cam_x:f32,cam_y:f32,
+    world_width:f32,vw:f32){
+    let sx=(w.player.x-cam_x)/world_width*vw;
+    let sy=(w.player.y-49.0-cam_y.round())*3.0;
+    if sx>0.0 && sx<vw && sy>7.0 && sy<540.0 {
+        native_outlined(assets,name,sx.round(),sy.round(),21.0,rgb(245,215,125));
+    }
 }
 fn draw_hud(world:&World,assets:&Assets,name:&str){
     let Some(chrome)=assets.dom_hud(world.player.class) else{return;};
@@ -86,7 +143,9 @@ fn draw_hud(world:&World,assets:&Assets,name:&str){
         }
     }
     if let Some(r)=assets.dom_hud_layout("name"){
-        native_text(assets,name,r.x+r.w/2.0,r.y+r.h/2.0,15.0,rgb(160,244,255),true);
+        native_outlined(assets,name,
+            (r.x+r.w/2.0).round(),(r.y+r.h/2.0).round(),
+            19.0,rgb(160,244,255));
     }
     if let Some(r)=assets.dom_hud_layout("level"){
         native_text(assets,&p.level.to_string(),
@@ -152,7 +211,8 @@ fn controls(w:&World,assets:&Assets,vw:f32){
     }
 }
 /// Invocar una sola vez al final del frame, tras componer el mundo de 180px.
-pub fn draw_game(w:&World,assets:&Assets,name:&str){
+pub fn draw_game(w:&World,assets:&Assets,name:&str,
+    camera_x:f32,camera_y:f32,world_width:f32){
     if !assets.has_native_hud(){return;}
     push_camera_state();
     let vw=css_width();
@@ -161,6 +221,10 @@ pub fn draw_game(w:&World,assets:&Assets,name:&str){
     let mut ui_camera=Camera2D::from_display_rect(Rect::new(0.0,0.0,vw,540.0));
     ui_camera.zoom.y=-ui_camera.zoom.y;
     set_camera(&ui_camera);
+    // Radial light and player tag are in this full-resolution layer, then
+    // the HUD stays above both (as the original CSS stack does).
+    draw_scene_lights(w,assets,camera_x,camera_y,world_width,vw);
+    draw_world_name(w,assets,name,camera_x,camera_y,world_width,vw);
     draw_hud(w,assets,name);
     controls(w,assets,vw);
     pop_camera_state();
@@ -193,7 +257,7 @@ pub fn draw_home(
     if page==crate::ui::HomePage::Landing {
         if let Some(r)=assets.dom_menu_rect("name"){
             native_text(assets,name,x+r.x+r.w*0.5,r.y+r.h*0.49,
-                18.0,rgb(246,232,184),true);
+                20.0,rgb(246,232,184),true);
         }
         if let Some(r)=assets.dom_menu_rect("level"){
             native_text(assets,&format!("NIVEL {}",level),
