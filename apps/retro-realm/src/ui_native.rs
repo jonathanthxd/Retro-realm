@@ -156,7 +156,11 @@ pub fn draw_game(w:&World,assets:&Assets,name:&str){
     if !assets.has_native_hud(){return;}
     push_camera_state();
     let vw=css_width();
-    set_camera(&Camera2D::from_display_rect(Rect::new(0.0,0.0,vw,540.0)));
+    // En el framebuffer principal no se aplica el flip_y del render target.
+    // Invertir la cámara nativa mantiene origen (0,0) arriba a la izquierda.
+    let mut ui_camera=Camera2D::from_display_rect(Rect::new(0.0,0.0,vw,540.0));
+    ui_camera.zoom.y=-ui_camera.zoom.y;
+    set_camera(&ui_camera);
     draw_hud(w,assets,name);
     controls(w,assets,vw);
     pop_camera_state();
@@ -170,7 +174,11 @@ pub fn draw_home(
     if !assets.has_native_menu(){return;}
     push_camera_state();
     let vw=css_width();
-    set_camera(&Camera2D::from_display_rect(Rect::new(0.0,0.0,vw,540.0)));
+    // En el framebuffer principal no se aplica el flip_y del render target.
+    // Invertir la cámara nativa mantiene origen (0,0) arriba a la izquierda.
+    let mut ui_camera=Camera2D::from_display_rect(Rect::new(0.0,0.0,vw,540.0));
+    ui_camera.zoom.y=-ui_camera.zoom.y;
+    set_camera(&ui_camera);
     let x=(vw-960.0)*0.5;
     let selected=match page{
         crate::ui::HomePage::Landing=>assets.dom_home(hero),
@@ -204,7 +212,11 @@ pub fn menu_hit(assets:&Assets,key:&str,point:Vec2,ui_width:f32)->Option<bool>{
 pub fn draw_pause(assets:&Assets,audio_enabled:bool){
     push_camera_state();
     let vw=css_width();
-    set_camera(&Camera2D::from_display_rect(Rect::new(0.0,0.0,vw,540.0)));
+    // En el framebuffer principal no se aplica el flip_y del render target.
+    // Invertir la cámara nativa mantiene origen (0,0) arriba a la izquierda.
+    let mut ui_camera=Camera2D::from_display_rect(Rect::new(0.0,0.0,vw,540.0));
+    ui_camera.zoom.y=-ui_camera.zoom.y;
+    set_camera(&ui_camera);
     draw_rectangle(0.0,0.0,vw,540.0,rgba(0,0,0,204));
     let x=vw*0.5-210.0;
     let y=60.0;
