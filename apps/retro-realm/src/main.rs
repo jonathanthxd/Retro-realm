@@ -7,9 +7,11 @@ mod scenery;
 mod ui;
 mod ui_native;
 mod layout;
+mod settings;
 mod sfx;
 
-use macroquad::audio::{load_sound, play_sound, stop_sound, PlaySoundParams, Sound};
+use macroquad::audio::{load_sound, play_sound, stop_sound, set_sound_volume, PlaySoundParams, Sound};
+use settings::Settings;
 use macroquad::prelude::*;
 use realm_core::{HeroClass, Input, MapId, World, TICK_RATE, WORLD_WIDTH};
 use sfx::{Cue,Sfx};
@@ -65,12 +67,16 @@ impl Music {
             _ => None,
         }
     }
-    fn sync(&mut self, screen: Screen, w: &World,enabled:bool) {
-        let next = if !enabled {-1}
+    fn sync(&mut self, screen: Screen, w: &World,enabled:bool,volume:f32,style:u8) {
+        let next = if !enabled||volume<=0.0 {-1}
             else if screen == Screen::Home {0}
             else if w.boss().is_some() {2}
-            else if w.map == MapId::DarkForest {1} else {3};
+            else if w.map == MapId::DarkForest {1}
+            else {match style {0=>1,1=>0,_=>3}};
         if next == self.active {
+            if let Some(sound)=self.track(next) {
+                set_sound_volume(sound,0.56*volume.clamp(0.0,1.0));
+            }
             return;
         }
         if let Some(old) = self.track(self.active) {
@@ -82,7 +88,7 @@ impl Music {
                 sound,
                 PlaySoundParams {
                     looped: true,
-                    volume: 0.56,
+                    volume: 0.56*volume.clamp(0.0,1.0),
                 },
             );
         }
@@ -98,15 +104,21 @@ async fn main() {
     let assets = assets::Assets::load().await;
     let native_ui=assets.has_native_hud();
     let native_home=assets.has_native_menu();
-    let control_prefs=layout::ControlPrefs::default();
+    let mut profile=Settings::load();
+    let mut saved_profile=profile.clone();
+    let mut last_save_time=get_time()-10.0;
+    let mut control_prefs=profile.controls();
+    let mut editing_controls=false;
+    let mut selected_control:Option<String>=None;
+    let mut drag_control:Option<(String,Vec2,Vec2)>=None;
     let mut music = if snapshot.is_some() {
         Music{menu:None,forest:None,night:None,boss:None,active:-1}
     } else { Music::load().await };
     let sounds = if snapshot.is_some() {Sfx::silent()}else{Sfx::load().await};
     let mut audio_enabled = true;
-    let mut chosen = HeroClass::LunarMage;
+    let mut chosen = HeroClass::from_index(profile.selected_class as usize);
     let mut home_page = ui::HomePage::Landing;
-    let mut player_name = String::from("Jugador");
+    let mut player_name = profile.player_name.clone();
     let mut editing_name = false;
     let mut world = World::new(chosen);
     let mut effects=VisualFx::default();
@@ -225,16 +237,76 @@ async fn main() {
                 accumulator = 0.0;
             }
             if screen == Screen::Paused {
-                let has_dom_pause=native_ui && assets.dom_pause_panel().is_some();
-                let touches=if has_dom_pause {
-                    controls::pressed_points(virtual_width)
-                } else { Vec::new() };
-                let clicked=|key:&str| {
-                    touches.iter().any(|p|ui_native::pause_hit(&assets,key,
-                        *p*3.0,virtual_width*3.0).unwrap_or(false))
-                };
-                if has_dom_pause {
-                    if clicked("music")||clicked("sound") {audio_enabled=!audio_enabled;}
+                let points=controls::ui_pressed_points();
+                let held=controls::ui_active_points();
+                if editing_controls {
+                    let hit=|id:&str|points.iter().any(|p|
+                        ui_native::editor_hit(id,*p));
+                    if hit("done"){
+                        editing_controls=false;
+                        drag_control=None;
+                        last_save_time=get_time()-10.0;
+                    }else if hit("reset"){
+                        control_prefs=layout::ControlPrefs::default();
+                        selected_control=None;
+                        drag_control=None;
+                    }else if hit("minus")||hit("plus"){
+                        if let Some(id)=selected_control.as_ref(){
+                            let change=if hit("plus"){0.05}else{-0.05};
+                            let scale=control_prefs.individual.entry(id.clone()).or_insert(1.0);
+                            *scale=(*scale+change).clamp(0.4,2.2);
+                        }
+                    }else if drag_control.is_none(){
+                        let layout=layout::UiLayout::current();
+                        for point in &points{
+                            for id in ["bl","br","bj","bm","bs","s0",
+                                "s1","s2","s3","ap","pause","joy"] {
+                                if id=="joy"&&!control_prefs.joystick{continue;}
+                                if (id=="bl"||id=="br")&&control_prefs.joystick{continue;}
+                                let source=if id=="joy"{
+                                    Some(Rect::new(18.0,414.0,112.0,112.0))
+                                }else{assets.dom_layout(id)};
+                                if let Some(r)=source {
+                                    let rect=layout.control_rect(id,r,&control_prefs);
+                                    if layout.hit_rect(rect).contains(*point){
+                                        selected_control=Some(id.to_string());
+                                        let prev=control_prefs.offsets.get(id)
+                                            .copied().unwrap_or(Vec2::ZERO);
+                                        drag_control=Some((id.to_string(),*point,prev));
+                                        break;
+                                    }
+                                }
+                            }
+                            if drag_control.is_some(){break;}
+                        }
+                    }
+                    if let Some((id,origin,prior))=drag_control.as_ref(){
+                        if let Some(point)=held.first(){
+                            control_prefs.offsets.insert(id.clone(),
+                                *prior+(*point-*origin));
+                        }else{drag_control=None;}
+                    }
+                }else{
+                    let clicked=|key:&str|points.iter().any(|p|
+                        ui_native::pause_hit(&assets,key,*p,
+                            layout::UiLayout::current().width).unwrap_or(false));
+                    let layout=layout::UiLayout::current();
+                    for (key,value) in [("music",&mut profile.music_volume),
+                        ("sound",&mut profile.sfx_volume)] {
+                        if let Some(source)=assets.dom_pause_rect(key){
+                            let r=layout.source_rect(source);
+                            if let Some(p)=held.iter().find(|p|layout.hit_rect(r).contains(**p)){
+                                *value=((p.x-r.x)/r.w.max(1.0)).clamp(0.0,1.0);
+                            }
+                        }
+                    }
+                    for style in 0..3u8 {
+                        if clicked(&format!("style{style}")){profile.music_style=style;}
+                    }
+                    if clicked("buttons"){control_prefs.joystick=false;}
+                    if clicked("joystick"){control_prefs.joystick=true;}
+                    if clicked("reset"){control_prefs=layout::ControlPrefs::default();}
+                    if clicked("edit"){editing_controls=true;selected_control=None;}
                     if clicked("resume") {
                         screen=Screen::Playing;
                         accumulator=0.0;
@@ -244,14 +316,6 @@ async fn main() {
                         effects.clear();
                         accumulator=0.0;
                     }else if is_key_pressed(KeyCode::H)||clicked("menu"){
-                        screen=Screen::Home;
-                        effects.clear();
-                        home_page=ui::HomePage::Landing;
-                        accumulator=0.0;
-                    }
-                }else{
-                    if controls::sound_hit(virtual_width){audio_enabled=!audio_enabled;}
-                    if is_key_pressed(KeyCode::H)||controls::menu_hit(virtual_width){
                         screen=Screen::Home;
                         effects.clear();
                         home_page=ui::HomePage::Landing;
@@ -281,7 +345,7 @@ async fn main() {
                 let step = 1.0 / TICK_RATE;
                 let mut cycles = 0;
                 while accumulator >= step && cycles < 6 {
-                    tick_with_audio(&mut world,pending,&sounds,audio_enabled,&mut effects);
+                    tick_with_audio(&mut world,pending,&sounds,audio_enabled,profile.sfx_volume,&mut effects);
                     pending = Input::default();
                     accumulator -= step;
                     cycles += 1;
@@ -299,7 +363,7 @@ async fn main() {
             let smooth_x=1.0-0.9f32.powf((get_frame_time()*60.0).max(0.0));
             camera_x+=(want_x-camera_x)*smooth_x;
         }
-        music.sync(screen, &world,audio_enabled);
+        music.sync(screen, &world,audio_enabled,profile.music_volume,profile.music_style);
 
         let mut camera = Camera2D::from_display_rect(Rect::new(0.0, 0.0, virtual_width, 180.0));
         camera.render_target = Some(target.clone());
@@ -335,13 +399,19 @@ async fn main() {
             },
         );
         if native_home && screen==Screen::Home {
-            ui_native::draw_home(&assets,chosen,home_page,&player_name,world.player.level);
+            ui_native::draw_home(&assets,chosen,home_page,&player_name,profile.best_level);
         }
         if native_ui && screen!=Screen::Home {
             ui_native::draw_game(&world,&assets,&player_name,camera_x,camera_y,virtual_width,
                 &control_prefs);
             if screen==Screen::Paused {
-                ui_native::draw_pause(&assets,audio_enabled);
+                if editing_controls {
+                    ui_native::draw_control_editor(&assets,&control_prefs,
+                        selected_control.as_deref());
+                }else{
+                    ui_native::draw_pause(&assets,profile.music_volume,
+                        profile.sfx_volume,profile.music_style,&control_prefs);
+                }
             }
         }
         if let Some(kind)=snapshot.as_deref(){
@@ -354,12 +424,25 @@ async fn main() {
                 break;
             }
         }
+        profile.player_name=player_name.clone();
+        profile.selected_class=match chosen{
+            HeroClass::LunarMage=>0,HeroClass::Huntress=>1,HeroClass::CyberRaccoon=>2
+        };
+        profile.best_level=profile.best_level.max(world.player.level);
+        profile.update_controls(&control_prefs);
+        profile.validate();
+        if profile!=saved_profile && get_time()-last_save_time>0.7 {
+            if let Err(err)=profile.save(){eprintln!("Profile save failed: {err}");}
+            else {saved_profile=profile.clone();}
+            last_save_time=get_time();
+        }
         next_frame().await;
     }
 }
 
 
-fn tick_with_audio(world: &mut World, input: Input, sounds: &Sfx, audio_enabled: bool,fx:&mut VisualFx) {
+fn tick_with_audio(world: &mut World, input: Input, sounds: &Sfx,
+    audio_enabled: bool,sfx_volume:f32,fx:&mut VisualFx) {
     let before=FrameSnapshot::capture(world);
     let hp=world.player.hp;
     let level=world.player.level;
@@ -375,19 +458,19 @@ fn tick_with_audio(world: &mut World, input: Input, sounds: &Sfx, audio_enabled:
     world.tick(input);
     fx.observe(&before,world,input);
     if !audio_enabled {return;}
-    if input.jump && world.player.y<y {sounds.play(Cue::Jump);}
-    if input.melee && melee==0 && world.player.melee_ticks>0 {sounds.play(Cue::Attack);}
+    if input.jump && world.player.y<y {sounds.play(Cue::Jump,sfx_volume);}
+    if input.melee && melee==0 && world.player.melee_ticks>0 {sounds.play(Cue::Attack,sfx_volume);}
     if (0..3).any(|i|input.skills[i] && cooldowns[i]==0 && world.player.cooldowns[i]>0) {
-        sounds.play(Cue::Cast);
+        sounds.play(Cue::Cast,sfx_volume);
     }
-    if input.dash && dash==0 && world.player.dash_ticks>0 {sounds.play(Cue::Dash);}
-    if input.shield && shield==0 && world.player.shield_ticks>0 {sounds.play(Cue::Shield);}
-    if world.player.hp<hp {sounds.play(Cue::Hurt);}
-    if world.killed>killed {sounds.play(Cue::Kill);}
-    if world.player.level>level {sounds.play(Cue::Level);}
-    if world.map!=current_map {sounds.play(Cue::Portal);}
-    if !had_boss && world.boss().is_some(){sounds.play(Cue::Boss);}
+    if input.dash && dash==0 && world.player.dash_ticks>0 {sounds.play(Cue::Dash,sfx_volume);}
+    if input.shield && shield==0 && world.player.shield_ticks>0 {sounds.play(Cue::Shield,sfx_volume);}
+    if world.player.hp<hp {sounds.play(Cue::Hurt,sfx_volume);}
+    if world.killed>killed {sounds.play(Cue::Kill,sfx_volume);}
+    if world.player.level>level {sounds.play(Cue::Level,sfx_volume);}
+    if world.map!=current_map {sounds.play(Cue::Portal,sfx_volume);}
+    if !had_boss && world.boss().is_some(){sounds.play(Cue::Boss,sfx_volume);}
     if world.chests[current_map.index()].iter().filter(|c|c.opened).count()>opened {
-        sounds.play(Cue::Chest);
+        sounds.play(Cue::Chest,sfx_volume);
     }
 }

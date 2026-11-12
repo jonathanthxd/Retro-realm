@@ -32,9 +32,12 @@ impl Sfx {
         }
         Self{clips}
     }
-    pub fn play(&self,cue:Cue){
+    pub fn play(&self,cue:Cue,volume:f32){
         if let Some(Some(sound))=self.clips.get(cue.index()){
-            play_sound(sound,PlaySoundParams{looped:false,volume:0.24});
+            if volume>0.0 {
+                play_sound(sound,PlaySoundParams{looped:false,
+                    volume:0.24*volume.clamp(0.0,1.0)});
+            }
         }
     }
 }
