@@ -205,6 +205,84 @@ try {
     const cloudLayout=sc.ZCD.map(q=>[q.x,q.y,q.sp,q.s,q.par,q.a].join(','));
     return {images:out,decorLayout,cloudLayout};
   });
+  // Capture the FINAL original DOM interface at full 960x540 CSS resolution.
+  // Preserve real gradients, metallic borders, illustrations and shadows.
+  await page.addStyleTag({content:[
+    'html,body,#app{background:transparent!important}',
+    '#cv,#home,#menu,.fb,#ap{visibility:hidden!important}',
+    '#ctl>*{visibility:hidden!important}',
+    '#hd2{visibility:hidden!important;display:flex!important}',
+    '#hd2 #h2n,#hd2 #h2l,#hd2 #h2mt,#hd2 #h2ht,',
+    '#hd2 #h2g,#hd2 #h2d,#hd2 .fl{visibility:hidden!important}',
+  ].join(' ')});
+  const uiLayout=[];
+  const hudLayout=[];
+  const rects=await page.evaluate(()=>{
+    const root=document.getElementById('hd2');
+    if(!root)throw Error('Final HUD #hd2 not found');
+    const targets={frame:'#hd2',name:'#h2n',level:'#h2l',
+      hp:'#h2h',mp:'#h2m',hp_text:'#h2ht',mp_text:'#h2mt',
+      gold:'#h2g',gems:'#h2d'};
+    return Object.entries(targets).map(([key,selector])=>{
+      const r=document.querySelector(selector)?.getBoundingClientRect();
+      return [key,r?.x??0,r?.y??0,r?.width??0,r?.height??0];
+    });
+  });
+  hudLayout.push(...rects.map(r=>r.join(',')));
+  for(let cl=0;cl<3;cl++){
+    await page.evaluate(async index=>{
+      p.cls=index;
+      if(typeof icons==='function')icons();
+      if(typeof apIcon==='function')apIcon();
+      if(typeof window.hud==='function')window.hud();
+      const img=document.getElementById('h2p');
+      if(img?.decode)await img.decode().catch(()=>{});
+    },cl);
+    const hud=page.locator('#hd2');
+    await hud.evaluate(el=>el.style.visibility='visible');
+    await hud.screenshot({
+      path:path.join(dest,'ui_hd2_'+cl+'.png'),
+      omitBackground:true,animations:'disabled'
+    });
+    await hud.evaluate(el=>el.style.visibility='hidden');
+    for(const id of ['bl','br','s0','s1','s2','s3','bs','bj','bm','ap']){
+      const el=page.locator('#'+id);
+      const rect=await el.boundingBox();
+      if(!rect||rect.width<10||rect.height<10)
+        throw Error('Original DOM button lacks geometry: '+id);
+      const pad=4;
+      const clip={x:Math.max(0,Math.floor(rect.x-pad)),
+        y:Math.max(0,Math.floor(rect.y-pad)),
+        width:Math.ceil(rect.width+pad*2),
+        height:Math.ceil(rect.height+pad*2)};
+      clip.width=Math.min(clip.width,960-clip.x);
+      clip.height=Math.min(clip.height,540-clip.y);
+      await el.evaluate(node=>node.style.visibility='visible');
+      await page.screenshot({
+        path:path.join(dest,'ui_dom_'+id+'_'+cl+'.png'),
+        clip,omitBackground:true,animations:'disabled'
+      });
+      await el.evaluate(node=>node.style.visibility='hidden');
+      if(cl===0)uiLayout.push([id,clip.x,clip.y,clip.width,clip.height].join(','));
+    }
+  }
+  const pause=page.locator('button.fb.gear').first();
+  if(await pause.count()){
+    await pause.evaluate(el=>{el.style.display='block';el.style.visibility='visible'});
+    const rect=await pause.boundingBox();
+    if(rect&&rect.width>0){
+      const pad=4;
+      const clip={x:Math.max(0,Math.floor(rect.x-pad)),
+        y:Math.max(0,Math.floor(rect.y-pad)),
+        width:Math.min(960-Math.max(0,Math.floor(rect.x-pad)),Math.ceil(rect.width+pad*2)),
+        height:Math.min(540-Math.max(0,Math.floor(rect.y-pad)),Math.ceil(rect.height+pad*2))};
+      await page.screenshot({path:path.join(dest,'ui_dom_pause.png'),clip,omitBackground:true});
+      uiLayout.push(['pause',clip.x,clip.y,clip.width,clip.height].join(','));
+    }
+    await pause.evaluate(el=>el.style.visibility='hidden');
+  }
+  await writeFile(path.join(dest,'ui_dom_layout.csv'),uiLayout.join('\n')+'\n');
+  await writeFile(path.join(dest,'ui_hud_layout.csv'),hudLayout.join('\n')+'\n');
   const images=payload.images;
   if (images.length < 30) throw Error('Exportación incompleta: ' + images.length + ' sprites');
   const index = {};
