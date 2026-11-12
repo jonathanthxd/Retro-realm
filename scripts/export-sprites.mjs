@@ -146,6 +146,36 @@ try {
       cg.fillText(ch,(i%cols)*cellW+1,Math.floor(i/cols)*cellH+16);
     });
     add('ui_font_atlas',fontCanvas);
+    // Atlas 3x exportado desde la fuente auténtica RetroPx del HTML.
+    // El raster de 16px anterior perdía nitidez y confundía algunos glifos.
+    await document.fonts.load('48px RetroPx');
+    const glyphSize=48,glyphCellW=64,glyphCellH=72,glyphColumns=16;
+    const hires=document.createElement('canvas');
+    hires.width=glyphColumns*glyphCellW;
+    hires.height=Math.ceil(glyphs.length/glyphColumns)*glyphCellH;
+    const hi=hires.getContext('2d');
+    hi.fillStyle='#fff';
+    hi.font='48px RetroPx';
+    hi.textAlign='left';hi.textBaseline='alphabetic';
+    const advances=[];
+    glyphs.forEach((ch,i)=>{
+      advances.push(hi.measureText(ch).width);
+      hi.fillText(ch,(i%glyphColumns)*glyphCellW+3,
+        Math.floor(i/glyphColumns)*glyphCellH+56);
+    });
+    add('ui_font_atlas_hi',hires);
+    window.__RETRO_FONT_ADVANCES=advances;
+    // Gradiente radial original de zProps(), exportado a 3x para componer
+    // bloom directamente sobre el framebuffer, sin hacer bloom global.
+    const bloom=document.createElement('canvas');
+    bloom.width=bloom.height=204;
+    const bg=bloom.getContext('2d');
+    const grad=bg.createRadialGradient(102,102,3,102,102,102);
+    grad.addColorStop(0,'rgba(255,170,70,.34)');
+    grad.addColorStop(1,'rgba(255,120,30,0)');
+    bg.fillStyle=grad;
+    bg.fillRect(0,0,204,204);
+    add('fx_torch_bloom',bloom);
     // Pictogramas definitivos de los botones, tras aplicar CSS y clases del HTML.
     for(let cl=0;cl<3;cl++){
       p.cls=cl;icons();
@@ -203,7 +233,7 @@ try {
       }
     }
     const cloudLayout=sc.ZCD.map(q=>[q.x,q.y,q.sp,q.s,q.par,q.a].join(','));
-    return {images:out,decorLayout,cloudLayout};
+    return {images:out,decorLayout,cloudLayout,fontAdvances:window.__RETRO_FONT_ADVANCES};
   });
   // Capture the FINAL original DOM interface at full 960x540 CSS resolution.
   // Preserve real gradients, metallic borders, illustrations and shadows.
@@ -396,6 +426,7 @@ try {
     await writeFile(path.join(dest, name + '.png'), Buffer.from(base64, 'base64'));
     index[name] = { width, height, ax, ay };
   }
+  await writeFile(path.join(dest,'ui_font_advance.csv'),payload.fontAdvances.join(',')+'\\n');
   await writeFile(path.join(dest, 'index.json'), JSON.stringify(index, null, 2) + '\n');
   // El ancla Canvas (ax, ay) debe mantenerse. El alto del PNG no equivale
   // al punto de apoyo de todos los jefes ni personajes.
