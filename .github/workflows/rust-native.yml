@@ -1,0 +1,35 @@
+name: Rust / Macroquad — checks
+on:
+  push:
+    branches: [refactor/rust-macroquad-migration]
+    paths:
+      - 'Cargo.toml'
+      - 'crates/**'
+      - 'apps/**'
+      - '.github/workflows/rust-native.yml'
+  pull_request:
+    paths:
+      - 'Cargo.toml'
+      - 'crates/**'
+      - 'apps/**'
+      - '.github/workflows/rust-native.yml'
+  workflow_dispatch:
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - uses: Swatinem/rust-cache@v2
+      - name: Dependencias nativas de Linux
+        run: sudo apt-get update && sudo apt-get install -y libasound2-dev libudev-dev libx11-dev libxi-dev libgl1-mesa-dev pkg-config
+      - name: Comprobar formato (informativo)
+        run: cargo fmt --all -- --check || echo 'Formato por normalizar durante la migracion'
+      - name: Compilar ambos crates
+        run: cargo check --workspace --all-targets
+      - name: Pruebas de simulacion
+        run: cargo test -p realm-core
+      - name: Pruebas de efectos y aislamiento de gameplay
+        run: cargo test -p retro-realm --bin retro-realm

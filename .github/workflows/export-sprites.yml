@@ -1,0 +1,47 @@
+name: Exportar sprites originales desde Canvas HTML
+on:
+  push:
+    branches: [refactor/rust-macroquad-migration]
+    paths:
+      - "scripts/export-sprites.mjs"
+      - ".github/workflows/export-sprites.yml"
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  sprites:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Playwright (solo para extraer los recursos)
+        run: npm install --no-save --no-package-lock playwright-core
+      - name: Buscar Chrome
+        run: |
+          google-chrome --version
+      - name: Exportar PNG de Canvas
+        run: node scripts/export-sprites.mjs
+      - name: Versionar los PNG exportados sin tocar el HTML
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps/retro-realm/assets/sprites/
+          if ! git diff --cached --quiet; then
+            git commit -m "assets: export original Canvas sprite PNGs for Macroquad"
+            # El código fuente puede avanzar mientras Playwright exporta: rebase
+            # antes del push evita rechazos por un HEAD antiguo.
+            for attempt in 1 2 3; do
+              git fetch origin refactor/rust-macroquad-migration
+              git rebase origin/refactor/rust-macroquad-migration
+              if git push origin HEAD:refactor/rust-macroquad-migration; then
+                exit 0
+              fi
+              sleep 2
+            done
+            exit 1
+          fi

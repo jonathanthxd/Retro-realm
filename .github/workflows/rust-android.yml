@@ -1,0 +1,119 @@
+name: Rust / Macroquad — Android APK experimental
+on:
+  push:
+    branches: [refactor/rust-macroquad-migration]
+    paths:
+      - "apps/**"
+      - "crates/**"
+      - "scripts/**"
+      - "Cargo.toml"
+      - ".github/workflows/rust-android.yml"
+  workflow_dispatch:
+    inputs:
+      run_emulator:
+        description: 'Ejecutar prueba de arranque en Android 14 (lenta)'
+        type: boolean
+        required: false
+        default: false
+
+env:
+  NDK_VERSION: "28.2.13676358"
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+      - name: Rust 1.95 para cargo-quad-apk mantenido
+        run: |
+          rustup toolchain install 1.95.0 --profile minimal
+          rustup target add --toolchain 1.95.0 aarch64-linux-android x86_64-linux-android
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Configurar Android SDK y NDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: "platform-tools platforms;android-35 build-tools;35.0.0 ndk;28.2.13676358"
+      - name: Exponer Android NDK
+        run: |
+          echo "NDK_HOME=$ANDROID_SDK_ROOT/ndk/$NDK_VERSION" >> "$GITHUB_ENV"
+          echo "ANDROID_HOME=$ANDROID_SDK_ROOT" >> "$GITHUB_ENV"
+      - uses: Swatinem/rust-cache@v2
+      - name: Instalar ffmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Convertir el audio original a OGG
+        run: bash scripts/prepare-audio.sh
+      - name: Instalar cargo-quad-apk compatible con Rust moderno
+        run: cargo +1.95.0 install --git https://github.com/hoklims/cargo-quad-apk cargo-quad-apk --locked
+      - name: Compilar APK nativo
+        working-directory: apps/retro-realm
+        run: cargo +1.95.0 quad-apk build --release
+      - name: Verificar que se generó APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          find target apps/retro-realm/target -name '*.apk' -type f -print 2>/dev/null || true
+          apk="$(find apps/retro-realm/target target -path '*/apk/*.apk' ! -name '*_unaligned.apk' -type f -print -quit 2>/dev/null || true)"
+          if [ -z "$apk" ]; then
+            echo "::error::No se generó un APK nativo."
+            exit 1
+          fi
+          echo "APK: $apk"
+          ls -lh "$apk"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: RetroRealm-Rust-APK-PRELIMINAR
+          path: |
+            apps/retro-realm/target/android-artifacts/release/apk/*.apk
+            target/android-artifacts/release/apk/*.apk
+          if-no-files-found: error
+          retention-days: 7
+
+  emulator-smoke:
+    if: github.event_name == 'workflow_dispatch' && inputs.run_emulator
+    name: Arranque Android 14 con emulador
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: build-android
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: RetroRealm-Rust-APK-PRELIMINAR
+          path: native-apk
+      - name: Instalar, abrir y comprobar el juego nativo
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          script: |
+            set -euo pipefail
+            apk="$(find native-apk -name '*.apk' ! -name '*_unaligned.apk' -print -quit)"
+            test -n "$apk"
+            adb install -r "$apk"
+            adb logcat -c
+            adb shell am start -W -n com.pixelquest.game.preview/.MainActivity
+            sleep 5
+            pid="$(adb shell pidof com.pixelquest.game.preview | tr -d '\r')"
+            test -n "$pid" || { echo "::error::No inició el proceso nativo"; exit 1; }
+            adb exec-out screencap -p > android-preview.png
+            adb logcat --pid="$pid" -d -v threadtime > android-app-logcat.txt
+            if grep -E 'FATAL EXCEPTION|Fatal signal|SIGSEGV|UnsatisfiedLinkError|dlopen failed' android-app-logcat.txt; then
+              echo "::error::Se detectó una excepción nativa"
+              exit 1
+            fi
+      - name: Adjuntar captura de pantalla y registros
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: RetroRealm-Rust-Android-Smoke
+          path: |
+            android-preview.png
+            android-app-logcat.txt
+          if-no-files-found: warn
+          retention-days: 7

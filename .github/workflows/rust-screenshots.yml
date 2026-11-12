@@ -1,0 +1,72 @@
+name: Rust / Macroquad — capturas visuales nativas
+on:
+  workflow_dispatch:
+  push:
+    branches: [refactor/rust-macroquad-migration]
+    paths:
+      - 'apps/retro-realm/src/ui.rs'
+      - 'apps/retro-realm/src/ui_native.rs'
+      - 'apps/retro-realm/assets/sprites/ui_hd2_*.png'
+      - 'apps/retro-realm/assets/sprites/ui_home_*.png'
+      - 'apps/retro-realm/assets/sprites/ui_select_*.png'
+      - 'apps/retro-realm/assets/sprites/ui_credits.png'
+      - 'apps/retro-realm/assets/sprites/ui_pause_panel.png'
+      - 'apps/retro-realm/assets/sprites/ui_dom_*.png'
+      - 'apps/retro-realm/src/scenery.rs'
+      - 'apps/retro-realm/src/render.rs'
+      - 'apps/retro-realm/src/effects.rs'
+      - 'apps/retro-realm/src/assets.rs'
+      - 'apps/retro-realm/src/main.rs'
+      - 'apps/retro-realm/src/layout.rs'
+      - 'apps/retro-realm/src/controls.rs'
+      - 'apps/retro-realm/src/settings.rs'
+      - 'apps/retro-realm/assets/sprites/terrain_*'
+      - 'apps/retro-realm/assets/sprites/dark_*'
+      - 'apps/retro-realm/assets/sprites/hero_*'
+      - 'apps/retro-realm/assets/sprites/ogre_*'
+      - 'apps/retro-realm/assets/sprites/sprite_meta.csv'
+      - 'apps/retro-realm/assets/sprites/ui_font_atlas.png'
+      - 'apps/retro-realm/assets/sprites/scene_cloud_layout.csv'
+      - '.github/workflows/rust-screenshots.yml'
+permissions:
+  contents: read
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: OpenGL software / Xvfb
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb xauth libasound2-dev libudev-dev libx11-dev libxi-dev libgl1-mesa-dev pkg-config
+      - name: Compilar ejecutable nativo
+        run: cargo build -p retro-realm
+      - name: Capturar cuatro estados nativos (960x540)
+        run: |
+          mkdir -p native-captures
+          export LIBGL_ALWAYS_SOFTWARE=1
+          for scene in menu selection credits night dark pause; do
+            echo "Capturando $scene"
+            RETRO_REALM_SNAPSHOT="$scene" xvfb-run -a -s "-screen 0 960x540x24" timeout 80s ./target/debug/retro-realm
+          done
+          # Regression screenshots at both narrow and ultrawide aspect ratios.
+          for spec in "1024x768 tablet" "1200x540 ultrawide"; do
+            set -- $spec
+            res="$1"
+            label="$2"
+            for scene in menu night pause; do
+              echo "Capturando $scene ($res)"
+              RETRO_REALM_TEST_WINDOW="$res" RETRO_REALM_SNAPSHOT="$scene" \
+                xvfb-run -a -s "-screen 0 2560x1600x24" timeout 80s ./target/debug/retro-realm
+              mv "native-captures/$scene.png" "native-captures/$label-$scene.png"
+            done
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: RetroRealm-Rust-Visual-Previews
+          path: native-captures/*.png
+          if-no-files-found: error
+          retention-days: 14

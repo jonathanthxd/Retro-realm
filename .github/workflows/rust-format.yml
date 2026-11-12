@@ -1,0 +1,31 @@
+name: Normalizar formato Rust
+on:
+  push:
+    branches: [refactor/rust-macroquad-migration]
+    paths: [.github/workflows/rust-format.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  rustfmt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - name: Aplicar rustfmt
+        run: cargo fmt --all
+      - name: Confirmar formato en rama de migracion
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add 'apps/retro-realm/src/*.rs' 'crates/realm-core/src/*.rs'
+          if ! git diff --cached --quiet; then
+            git commit -m "style: normalize Rust source formatting"
+            git push origin HEAD:refactor/rust-macroquad-migration
+          fi

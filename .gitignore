@@ -1,0 +1,8 @@
+/target/
+/proj/
+**/.DS_Store
+**/Thumbs.db
+*.apk
+*.aab
+# Recursos derivados; los archivos de audio de origen siguen en la raiz
+/apps/retro-realm/assets/*.ogg

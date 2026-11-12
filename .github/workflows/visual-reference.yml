@@ -1,0 +1,29 @@
+name: Retro Realm original — referencias visuales
+on:
+  workflow_dispatch:
+  push:
+    branches: [refactor/rust-macroquad-migration]
+    paths:
+      - 'scripts/capture-reference.mjs'
+      - '.github/workflows/visual-reference.yml'
+permissions:
+  contents: read
+jobs:
+  baseline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm install --no-save --no-package-lock playwright-core
+      - run: google-chrome --version
+      - name: Capturar tres escenas del HTML original
+        run: node scripts/capture-reference.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: RetroRealm-HTML-Visual-References
+          path: reference-captures/
+          if-no-files-found: error
+          retention-days: 14
