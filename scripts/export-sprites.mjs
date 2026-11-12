@@ -293,9 +293,9 @@ try {
   const menuPage=await browser.newPage({viewport:{width:960,height:540}});
   await menuPage.setContent(instrumented.replace('<head>',
     '<head><base href="'+base+'">'),{waitUntil:'domcontentloaded',timeout:60000});
-  await menuPage.waitForFunction(()=>document.getElementById('crb')
-    &&typeof setHero==='function'&&typeof sel==='function',
-    null,{timeout:30000});
+  menuPage.on('pageerror',err=>console.log('[menu-source]',err.message.slice(0,150)));
+  await menuPage.waitForFunction(()=>document.getElementById('home')
+    &&document.getElementById('hb'),null,{timeout:20000});
   await menuPage.addStyleTag({content:[
     'html,body,#home,#hm{background:transparent!important}',
     '#hc,#app,.fb{visibility:hidden!important}',
@@ -312,22 +312,22 @@ try {
   });
   const menuLayout=[...homeRect.map(row=>row.join(','))];
   for(let cl=0;cl<3;cl++){
+    // setHero()/sel() are inside the original closure, not window globals.
+    // Trigger their actual DOM handlers instead of assuming global access.
     await menuPage.evaluate(index=>{
-      CLS=index;p.cls=index;
-      setHero();
-      document.getElementById('hm').style.display='flex';
-      document.getElementById('hs').style.display='none';
+      if(document.getElementById('hs').style.display==='flex')
+        document.getElementById('bb')?.click();
+      document.getElementById('hb').click();
+      document.querySelector('#hs .cd[data-i="'+index+'"]')?.click();
+      document.getElementById('bb')?.click();
     },cl);
     await menuPage.screenshot({
       path:path.join(dest,'ui_home_'+cl+'.png'),
       omitBackground:true,animations:'disabled'
     });
-    await menuPage.evaluate(index=>{
-      CLS=index;p.cls=index;
-      sel();
-      document.getElementById('hm').style.display='none';
-      document.getElementById('hs').style.display='flex';
-    },cl);
+    await menuPage.evaluate(()=>{
+      document.getElementById('hb').click();
+    });
     if(cl===0){
       const layout=await menuPage.evaluate(()=>{
         const rows=[];
@@ -347,11 +347,9 @@ try {
     });
   }
   await menuPage.evaluate(()=>{
+    document.getElementById('bb')?.click();
     const el=document.getElementById('crm');
-    if(!el)throw Error('Original credits #crm missing');
-    document.getElementById('hs').style.display='none';
-    document.getElementById('hm').style.display='flex';
-    el.style.display='flex';
+    if(el)el.style.display='flex';
   });
   await menuPage.screenshot({
     path:path.join(dest,'ui_credits.png'),
