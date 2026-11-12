@@ -426,7 +426,7 @@ try {
     await writeFile(path.join(dest, name + '.png'), Buffer.from(base64, 'base64'));
     index[name] = { width, height, ax, ay };
   }
-  await writeFile(path.join(dest,'ui_font_advance.csv'),payload.fontAdvances.join(',')+'\\n');
+  await writeFile(path.join(dest,'ui_font_advance.csv'),payload.fontAdvances.join(',')+'\n');
   await writeFile(path.join(dest, 'index.json'), JSON.stringify(index, null, 2) + '\n');
   // El ancla Canvas (ax, ay) debe mantenerse. El alto del PNG no equivale
   // al punto de apoyo de todos los jefes ni personajes.
