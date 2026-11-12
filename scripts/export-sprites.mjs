@@ -288,6 +288,78 @@ try {
   }
   await writeFile(path.join(dest,'ui_dom_layout.csv'),uiLayout.join('\n')+'\n');
   await writeFile(path.join(dest,'ui_hud_layout.csv'),hudLayout.join('\n')+'\n');
+  // Separar también las pantallas DOM de Inicio / Selección / Créditos
+  // del render target 320x180. Se capturan completas y transparentes.
+  const menuPage=await browser.newPage({viewport:{width:960,height:540}});
+  await menuPage.setContent(instrumented.replace('<head>',
+    '<head><base href="'+base+'">'),{waitUntil:'domcontentloaded',timeout:60000});
+  await menuPage.waitForFunction(()=>document.getElementById('crb')
+    &&typeof setHero==='function'&&typeof sel==='function',
+    null,{timeout:30000});
+  await menuPage.addStyleTag({content:[
+    'html,body,#home,#hm{background:transparent!important}',
+    '#hc,#app,.fb{visibility:hidden!important}',
+    '#home{visibility:visible!important;display:block!important}',
+    '#nm,#lv{color:transparent!important;caret-color:transparent!important}',
+  ].join(' ')});
+  const homeRect=await menuPage.evaluate(()=>{
+    const list={name:'#nm',level:'#lv',play:'#pl',hero:'#hb',
+      credits:'#crb'};
+    return Object.entries(list).map(([key,sel])=>{
+      const r=document.querySelector(sel)?.getBoundingClientRect();
+      return [key,r?.x||0,r?.y||0,r?.width||0,r?.height||0];
+    });
+  });
+  const menuLayout=[...homeRect.map(row=>row.join(','))];
+  for(let cl=0;cl<3;cl++){
+    await menuPage.evaluate(index=>{
+      CLS=index;p.cls=index;
+      setHero();
+      document.getElementById('hm').style.display='flex';
+      document.getElementById('hs').style.display='none';
+    },cl);
+    await menuPage.screenshot({
+      path:path.join(dest,'ui_home_'+cl+'.png'),
+      omitBackground:true,animations:'disabled'
+    });
+    await menuPage.evaluate(index=>{
+      CLS=index;p.cls=index;
+      sel();
+      document.getElementById('hm').style.display='none';
+      document.getElementById('hs').style.display='flex';
+    },cl);
+    if(cl===0){
+      const layout=await menuPage.evaluate(()=>{
+        const rows=[];
+        document.querySelectorAll('#hs .cd').forEach((el,i)=>{
+          const r=el.getBoundingClientRect();
+          rows.push(['card'+i,r.x,r.y,r.width,r.height]);
+        });
+        const r=document.getElementById('bb')?.getBoundingClientRect();
+        if(r)rows.push(['back',r.x,r.y,r.width,r.height]);
+        return rows;
+      });
+      menuLayout.push(...layout.map(row=>row.join(',')));
+    }
+    await menuPage.screenshot({
+      path:path.join(dest,'ui_select_'+cl+'.png'),
+      omitBackground:true,animations:'disabled'
+    });
+  }
+  await menuPage.evaluate(()=>{
+    const el=document.getElementById('crm');
+    if(!el)throw Error('Original credits #crm missing');
+    document.getElementById('hs').style.display='none';
+    document.getElementById('hm').style.display='flex';
+    el.style.display='flex';
+  });
+  await menuPage.screenshot({
+    path:path.join(dest,'ui_credits.png'),
+    omitBackground:true,animations:'disabled'
+  });
+  await menuPage.close();
+  await writeFile(path.join(dest,'ui_menu_layout.csv'),
+    menuLayout.join('\n')+'\n');
   const images=payload.images;
   if (images.length < 30) throw Error('Exportación incompleta: ' + images.length + ' sprites');
   const index = {};
