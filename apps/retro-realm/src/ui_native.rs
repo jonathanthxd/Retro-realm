@@ -310,7 +310,8 @@ pub fn menu_hit(assets:&Assets,key:&str,point:Vec2,ui_width:f32)->Option<bool>{
 }
 /// Pantalla de pausa a resolución CSS. El modal del HTML original mide
 /// máximo 420px, tiene doble borde dorado y fondo acero violeta.
-pub fn draw_pause(assets:&Assets,audio_enabled:bool){
+pub fn draw_pause(assets:&Assets,music_volume:f32,sfx_volume:f32,
+    music_style:u8,prefs:&ControlPrefs){
     push_camera_state();
     let layout=UiLayout::current();
     let vw=layout.width;
@@ -324,6 +325,7 @@ pub fn draw_pause(assets:&Assets,audio_enabled:bool){
                 dest_size:Some(vec2(frame.w,frame.h)),
                 ..Default::default()
             });
+        draw_pause_values(assets,&layout,music_volume,sfx_volume,music_style,prefs);
         pop_camera_state();
         return;
     }
@@ -339,8 +341,8 @@ pub fn draw_pause(assets:&Assets,audio_enabled:bool){
     native_text(assets,"PAUSA",vw*0.5,y+35.0,22.0,rgb(245,208,112),true);
     native_text(assets,"Música",x+27.0,y+82.0,13.0,rgb(246,231,191),false);
     native_text(assets,"Sonidos",x+27.0,y+132.0,13.0,rgb(246,231,191),false);
-    for (row,val) in [(0,if audio_enabled{0.7}else{0.0}),
-        (1,if audio_enabled{0.8}else{0.0})] {
+    for (row,val) in [(0,music_volume.clamp(0.0,1.0)),
+        (1,sfx_volume.clamp(0.0,1.0))] {
         let ry=y+77.0+row as f32*50.0;
         draw_rectangle(x+182.0,ry-4.0,198.0,16.0,rgb(13,16,29));
         draw_rectangle(x+187.0,ry+1.0,188.0,6.0,rgb(102,102,120));
@@ -369,6 +371,73 @@ pub fn draw_pause(assets:&Assets,audio_enabled:bool){
         draw_rectangle_lines(bx,y+355.0,193.0,39.0,2.0,
             if i==1 {rgb(240,205,91)}else{rgb(139,133,152)});
         native_text(assets,label,bx+96.5,y+376.0,12.0,rgb(246,230,192),true);
+    }
+    pop_camera_state();
+}
+fn draw_pause_values(assets:&Assets,layout:&UiLayout,music:f32,sfx:f32,
+    style:u8,prefs:&ControlPrefs){
+    for (key,value) in [("music",music),("sound",sfx)] {
+        let Some(r)=assets.dom_pause_rect(key) else {continue;};
+        let r=layout.source_rect(r);
+        draw_rectangle(r.x,r.y,r.w,r.h,rgb(31,33,48));
+        let h=(r.h*0.46).max(3.0);
+        draw_rectangle(r.x+3.0,r.y+(r.h-h)*0.5,
+            (r.w-6.0).max(0.0),h,rgb(83,89,110));
+        draw_rectangle(r.x+3.0,r.y+(r.h-h)*0.5,
+            (r.w-6.0).max(0.0)*value,h,rgb(239,201,90));
+        draw_circle(r.x+3.0+(r.w-6.0)*value,r.y+r.h*0.5,
+            (r.h*0.51).max(5.0),rgb(252,237,187));
+    }
+    for (key,selected) in [
+        ("style0",style==0),("style1",style==1),("style2",style==2),
+        ("buttons",!prefs.joystick),("joystick",prefs.joystick)
+    ] {
+        if !selected {continue;}
+        if let Some(r)=assets.dom_pause_rect(key) {
+            let r=layout.source_rect(r);
+            draw_rectangle_lines(r.x,r.y,r.w,r.h,2.5,rgb(255,216,85));
+        }
+    }
+}
+pub fn editor_rect(key:&str,layout:&UiLayout)->Rect{
+    let cx=layout.width*0.5;
+    match key{
+        "done"=>Rect::new(layout.width-154.0,12.0,138.0,52.0),
+        "reset"=>Rect::new(layout.width-322.0,12.0,154.0,52.0),
+        "minus"=>Rect::new(cx-154.0,12.0,53.0,52.0),
+        "plus"=>Rect::new(cx+100.0,12.0,53.0,52.0),
+        _=>Rect::new(-100.0,-100.0,0.0,0.0)
+    }
+}
+pub fn editor_hit(key:&str,point:Vec2)->bool {
+    editor_rect(key,&UiLayout::current()).contains(point)
+}
+pub fn draw_control_editor(assets:&Assets,prefs:&ControlPrefs,selected:Option<&str>){
+    push_camera_state();
+    let layout=UiLayout::current();
+    set_camera(&layout.camera());
+    let keys=[("done","LISTO"),("reset","RESTABLECER"),
+        ("minus","−"),("plus","+")];
+    for (id,label) in keys {
+        let r=editor_rect(id,&layout);
+        draw_rectangle(r.x,r.y,r.w,r.h,rgba(22,30,48,232));
+        draw_rectangle_lines(r.x,r.y,r.w,r.h,2.0,rgb(239,202,86));
+        native_text(assets,label,r.x+r.w*0.5,r.y+r.h*0.5,20.0,WHITE,true);
+    }
+    let chosen=selected.unwrap_or("Toca un botón");
+    native_outlined(assets,chosen,layout.width*0.5,38.0,20.0,
+        rgb(255,231,149));
+    if let Some(id)=selected {
+        let percent=(prefs.individual.get(id).copied().unwrap_or(1.0)*100.0).round();
+        native_text(assets,&format!("{percent:.0}%"),layout.width*0.5,75.0,18.0,
+            rgb(236,219,166),true);
+        let chosen_rect=if id=="joy"{
+            Some(layout.control_rect("joy",Rect::new(18.0,414.0,112.0,112.0),prefs))
+        }else {None};
+        if let Some(r)=chosen_rect {
+            draw_rectangle_lines(r.x-2.0,r.y-2.0,r.w+4.0,r.h+4.0,
+                3.0,rgb(255,216,85));
+        }
     }
     pop_camera_state();
 }
