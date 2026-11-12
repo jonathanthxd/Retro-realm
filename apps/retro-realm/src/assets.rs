@@ -23,10 +23,14 @@ pub struct Cloud {
     pub alpha:f32,
 }
 pub struct Assets {
-    heroes: [[Option<Texture2D>; 9]; 3],
+    heroes: [[Option<Texture2D>; 12]; 3],
+    idle_heroes: [[Option<Texture2D>; 4]; 3],
+    cast_heroes: [Option<Texture2D>; 3],
     attacks: [[Option<Texture2D>; 3]; 3],
     enemies: HashMap<(u8, usize), Texture2D>,
     humanoid_attacks: HashMap<(u8, usize), Texture2D>,
+    ogre_attacks: HashMap<(u8, &'static str), Texture2D>,
+    sprite_anchors: HashMap<String, Vec2>,
     king: HashMap<(&'static str, usize), Texture2D>,
     grass: [Option<Texture2D>; 4],
     soil: [Option<Texture2D>; 4],
@@ -59,9 +63,13 @@ impl Assets {
     pub async fn load() -> Self {
         let mut result = Self {
             heroes: std::array::from_fn(|_| std::array::from_fn(|_| None)),
+            idle_heroes: std::array::from_fn(|_| std::array::from_fn(|_| None)),
+            cast_heroes: std::array::from_fn(|_| None),
             attacks: std::array::from_fn(|_| std::array::from_fn(|_| None)),
             enemies: HashMap::new(),
             humanoid_attacks: HashMap::new(),
+            ogre_attacks: HashMap::new(),
+            sprite_anchors: HashMap::new(),
             king: HashMap::new(),
             grass: std::array::from_fn(|_| None),
             soil: std::array::from_fn(|_| None),
@@ -77,10 +85,25 @@ impl Assets {
             clouds: Vec::new(),
             font_atlas: None,
         };
+        // Metadatos de anclaje de los Canvas originales (ax/ay).
+        if let Ok(csv)=macroquad::file::load_string("sprites/sprite_meta.csv").await {
+            for line in csv.lines(){
+                let mut parts=line.split(',');
+                let (Some(key),Some(ax),Some(ay))=(parts.next(),parts.next(),parts.next())
+                    else{continue;};
+                if let (Ok(ax),Ok(ay))=(ax.parse::<f32>(),ay.parse::<f32>()){
+                    result.sprite_anchors.insert(key.to_string(),vec2(ax,ay));
+                }
+            }
+        }
         for class in 0..3 {
-            for phase in 0..9 {
+            for phase in [0,1,2,3,4,5,6,7,8,9,11] {
                 result.heroes[class][phase] = texture(format!("hero_{}_{}", class, phase)).await;
             }
+            for idle in 0..4 {
+                result.idle_heroes[class][idle]=texture(format!("hero_idle_{}_{}",class,idle)).await;
+            }
+            result.cast_heroes[class]=texture(format!("hero_cast_{}",class)).await;
             for phase in 0..3 {
                 result.attacks[class][phase] =
                     texture(format!("hero_attack_{}_{}", class, phase)).await;
@@ -114,6 +137,13 @@ impl Assets {
             }
         }
         for kind in 60..63 {
+            if kind==60 || kind==61 {
+                for pose in ["a","s","r"] {
+                    if let Some(t)=texture(format!("ogre_{}_{}",kind,pose)).await {
+                        result.ogre_attacks.insert((kind,pose),t);
+                    }
+                }
+            }
             let n = if kind == 62 { 2 } else { 4 };
             for frame in 0..n {
                 if let Some(t) = texture(format!("enemy_{}_{}", kind, frame)).await {
@@ -234,7 +264,21 @@ impl Assets {
         }
     }
     pub fn hero(&self, class: HeroClass, phase: usize) -> Option<&Texture2D> {
-        self.heroes[Self::class_index(class)][phase.min(8)].as_ref()
+        self.heroes[Self::class_index(class)][phase.min(11)].as_ref()
+    }
+    pub fn hero_idle(&self,class:HeroClass,phase:usize)->Option<&Texture2D>{
+        self.idle_heroes[Self::class_index(class)][phase%4].as_ref()
+            .or_else(||self.hero(class,0))
+    }
+    pub fn hero_cast(&self,class:HeroClass)->Option<&Texture2D>{
+        self.cast_heroes[Self::class_index(class)].as_ref()
+            .or_else(||self.hero(class,0))
+    }
+    pub fn ogre_attack(&self,kind:u8,pose:&'static str)->Option<&Texture2D>{
+        self.ogre_attacks.get(&(kind,pose))
+    }
+    pub fn anchor(&self,key:&str,default:Vec2)->Vec2 {
+        self.sprite_anchors.get(key).copied().unwrap_or(default)
     }
     pub fn hero_attack(&self, class: HeroClass, phase: usize) -> Option<&Texture2D> {
         self.attacks[Self::class_index(class)][phase.min(2)].as_ref()
