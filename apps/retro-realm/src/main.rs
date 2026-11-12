@@ -250,7 +250,7 @@ async fn main() {
                 world.player.level,&assets),
             Screen::Playing => render::draw_game(&world,virtual_width,&assets,&player_name,&target,camera_y,&effects),
             Screen::Paused => {
-                render::draw_game(&world,virtual_width,&assets,&player_name,&target,camera_y);
+                render::draw_game(&world,virtual_width,&assets,&player_name,&target,camera_y,&effects);
                 ui::draw_pause(virtual_width,audio_enabled);
             }
         }

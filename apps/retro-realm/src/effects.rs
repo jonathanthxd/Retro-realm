@@ -244,7 +244,7 @@ impl VisualFx {
             let mut last=vec2(beam.from.x-cam,-40.0);
             for step in 1..=14 {
                 let u=step as f32/14.0;
-                let wobble=((beam.seed as f32*.000_01+step as f32*7.0).sin()*7.0)
+                let wobble=((beam.seed as f32*0.000_01+step as f32*7.0).sin()*7.0)
                     *u*(1.0-u);
                 let p=vec2(x+8.0*(1.0-u)+wobble,
                     -40.0+(beam.to.y+40.0)*u);
@@ -287,7 +287,7 @@ pub fn enemy_attack_fx(e:&realm_core::Enemy,x:f32,tick:u64){
     let phase=(1.0-e.attack as f32/if e.boss{36.0}else{30.0})
         .clamp(0.0,1.0);
     if e.attack>0 && phase<0.4&&!e.boss {
-        let alpha=(55.0+38.0*(tick as f32*.8).sin()) as u8;
+        let alpha=(55.0+38.0*(tick as f32*0.8).sin()) as u8;
         draw_circle(x,e.y-12.0*sc,10.0*sc,
             rgba(255,60,60,alpha));
         draw_text("!",x-2.0,e.y-38.0*sc,12.0,rgb(255,105,105));
@@ -325,7 +325,7 @@ pub fn enemy_attack_fx(e:&realm_core::Enemy,x:f32,tick:u64){
         draw_circle(pos.x,pos.y,radius,col);
         draw_circle(pos.x,pos.y,2.0,rgb(255,255,236));
         draw_ellipse_lines(x,e.y-1.0,6.0+phase*12.0,2.0+phase*3.0,
-            1.2,rgba(210,192,255,160));
+            0.0,1.2,rgba(210,192,255,160));
     }
     if e.king_pose=="a"{
         let x=x-e.facing*10.0*sc;
@@ -344,7 +344,7 @@ pub fn enemy_attack_fx(e:&realm_core::Enemy,x:f32,tick:u64){
 pub fn hero_attack_fx(x:f32,y:f32,dir:f32,melee_ticks:u16,class:HeroClass) {
     if !(5..=11).contains(&melee_ticks){return;}
     let u=(11-melee_ticks) as f32/6.0;
-    let start=-1.1;
+    let start:f32=-1.1;
     let radius=if class==HeroClass::CyberRaccoon{25.0}else{30.0};
     let color=if class==HeroClass::CyberRaccoon{rgb(127,252,255)}
         else{rgb(234,240,255)};
@@ -355,7 +355,7 @@ pub fn hero_attack_fx(x:f32,y:f32,dir:f32,melee_ticks:u16,class:HeroClass) {
         let a=start+2.2*u*n as f32/16.0;
         let next=vec2(center.x+a.cos()*radius*dir,center.y+a.sin()*radius);
         draw_line(prev.x,prev.y,next.x,next.y,3.0,
-            Color::new(color.r,color.g,color.b,(1.0-u*.65).max(0.15)));
+            Color::new(color.r,color.g,color.b,(1.0-u*0.65).max(0.15)));
         prev=next;
     }
 }
