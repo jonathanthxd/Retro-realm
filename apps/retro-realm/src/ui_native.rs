@@ -161,6 +161,44 @@ pub fn draw_game(w:&World,assets:&Assets,name:&str){
     controls(w,assets,vw);
     pop_camera_state();
 }
+/// La UI de Inicio y Selección procede del DOM real (#hm/#hs), no de
+/// figuras aproximadas dibujadas dentro del render target de 180px.
+pub fn draw_home(
+    assets:&Assets,hero:HeroClass,page:crate::ui::HomePage,
+    name:&str,level:u16
+){
+    if !assets.has_native_menu(){return;}
+    push_camera_state();
+    let vw=css_width();
+    set_camera(&Camera2D::from_display_rect(Rect::new(0.0,0.0,vw,540.0)));
+    let x=(vw-960.0)*0.5;
+    let selected=match page{
+        crate::ui::HomePage::Landing=>assets.dom_home(hero),
+        crate::ui::HomePage::Selection=>assets.dom_selection(hero),
+        crate::ui::HomePage::Credits=>assets.dom_credits().or_else(||assets.dom_home(hero)),
+    };
+    if let Some(image)=selected {
+        draw_texture_ex(image,x,0.0,WHITE,DrawTextureParams{
+            dest_size:Some(vec2(960.0,540.0)),..Default::default()
+        });
+    }
+    if page==crate::ui::HomePage::Landing {
+        if let Some(r)=assets.dom_menu_rect("name"){
+            native_text(assets,name,x+r.x+r.w*0.5,r.y+r.h*0.49,
+                18.0,rgb(246,232,184),true);
+        }
+        if let Some(r)=assets.dom_menu_rect("level"){
+            native_text(assets,&format!("NIVEL {}",level),
+                x+r.x+r.w*0.5,r.y+r.h*0.52,13.0,rgb(240,208,112),true);
+        }
+    }
+    pop_camera_state();
+}
+pub fn menu_hit(assets:&Assets,key:&str,point:Vec2,ui_width:f32)->Option<bool>{
+    let r=assets.dom_menu_rect(key)?;
+    let x=r.x+(ui_width-960.0)*0.5;
+    Some(Rect::new(x,r.y,r.w,r.h).contains(point))
+}
 /// Pantalla de pausa a resolución CSS. El modal del HTML original mide
 /// máximo 420px, tiene doble borde dorado y fondo acero violeta.
 pub fn draw_pause(assets:&Assets,audio_enabled:bool){
