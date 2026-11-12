@@ -52,6 +52,10 @@ pub struct Assets {
     dom_pause: Option<Texture2D>,
     dom_layout: HashMap<String,Rect>,
     dom_hud_layout: HashMap<String,Rect>,
+    dom_home:[Option<Texture2D>;3],
+    dom_selection:[Option<Texture2D>;3],
+    dom_credits:Option<Texture2D>,
+    dom_menu_layout:HashMap<String,Rect>,
 }
 
 async fn dom_texture(name:String)->Option<Texture2D>{
@@ -116,6 +120,10 @@ impl Assets {
             dom_pause: None,
             dom_layout: HashMap::new(),
             dom_hud_layout: HashMap::new(),
+            dom_home:std::array::from_fn(|_|None),
+            dom_selection:std::array::from_fn(|_|None),
+            dom_credits:None,
+            dom_menu_layout:HashMap::new(),
         };
         // Metadatos de anclaje de los Canvas originales (ax/ay).
         if let Ok(csv)=macroquad::file::load_string("sprites/sprite_meta.csv").await {
@@ -217,6 +225,14 @@ impl Assets {
             }
         }
         result.dom_pause=dom_texture("ui_dom_pause".to_string()).await;
+        if let Ok(csv)=macroquad::file::load_string("sprites/ui_menu_layout.csv").await {
+            result.dom_menu_layout=parse_css_rects(&csv);
+        }
+        for cl in 0..3{
+            result.dom_home[cl]=dom_texture(format!("ui_home_{}",cl)).await;
+            result.dom_selection[cl]=dom_texture(format!("ui_select_{}",cl)).await;
+        }
+        result.dom_credits=dom_texture("ui_credits".to_string()).await;
         for cl in 0..3 {
             result.portraits[cl] = texture(format!("ui_portrait_{}",cl)).await;
             for id in ["s0","s1","s2","s3","bj","bm","bl","br"] {
@@ -284,6 +300,21 @@ impl Assets {
             }
         }
         result
+    }
+    pub fn has_native_menu(&self)->bool{
+        self.dom_home[0].is_some()&&self.dom_menu_layout.contains_key("play")
+    }
+    pub fn dom_home(&self,hero:HeroClass)->Option<&Texture2D>{
+        self.dom_home[Self::class_index(hero)].as_ref()
+    }
+    pub fn dom_selection(&self,hero:HeroClass)->Option<&Texture2D>{
+        self.dom_selection[Self::class_index(hero)].as_ref()
+    }
+    pub fn dom_credits(&self)->Option<&Texture2D>{
+        self.dom_credits.as_ref()
+    }
+    pub fn dom_menu_rect(&self,key:&str)->Option<Rect>{
+        self.dom_menu_layout.get(key).copied()
     }
     pub fn has_native_hud(&self)->bool {
         self.dom_hud[0].is_some()
