@@ -322,6 +322,7 @@ ui_portrait_2,0,0
 ui_font_atlas,0,0
 ui_font_atlas_hi,0,0
 fx_torch_bloom,0,0
+fx_portal_bloom,0,0
 ui_s0_0,0,0
 ui_s1_0,0,0
 ui_s2_0,0,0
