@@ -47,17 +47,18 @@ pub struct Button {
     pub caption: &'static str,
 }
 pub fn buttons(vw: f32) -> [Button; 10] {
-    // Tamaños y posiciones de la última capa CSS original, traducidos a 320x180.
+    // Centros reales de los controles DOM (CSS 960x540 / 3).
+    // El radio es ligeramente menor que la imagen, como el área táctil CSS.
     [
-        Button{id:ButtonId::Left,center:vec2(15.5,156.0),radius:11.5,caption:"<"},
-        Button{id:ButtonId::Right,center:vec2(41.5,156.0),radius:11.5,caption:">"},
-        Button{id:ButtonId::Jump,center:vec2(vw-45.0,163.0),radius:11.0,caption:"SAL"},
-        Button{id:ButtonId::Melee,center:vec2(vw-18.5,161.5),radius:13.5,caption:"ATK"},
-        Button{id:ButtonId::Shield,center:vec2(vw-87.0,141.0),radius:9.5,caption:"ESC"},
-        Button{id:ButtonId::Skill0,center:vec2(vw-66.0,163.0),radius:10.0,caption:"1"},
-        Button{id:ButtonId::Skill1,center:vec2(vw-54.5,140.0),radius:10.0,caption:"2"},
-        Button{id:ButtonId::Skill2,center:vec2(vw-34.0,136.0),radius:10.0,caption:"3"},
-        Button{id:ButtonId::Dash,center:vec2(vw-13.0,132.5),radius:10.0,caption:"DASH"},
+        Button{id:ButtonId::Left,center:vec2(15.67,163.67),radius:11.0,caption:"<"},
+        Button{id:ButtonId::Right,center:vec2(41.67,163.67),radius:11.0,caption:">"},
+        Button{id:ButtonId::Jump,center:vec2(vw-45.0,165.0),radius:10.33,caption:"SAL"},
+        Button{id:ButtonId::Melee,center:vec2(vw-18.33,161.67),radius:13.67,caption:"ATK"},
+        Button{id:ButtonId::Shield,center:vec2(vw-78.33,139.67),radius:9.67,caption:"ESC"},
+        Button{id:ButtonId::Skill0,center:vec2(vw-66.0,163.33),radius:9.33,caption:"1"},
+        Button{id:ButtonId::Skill1,center:vec2(vw-54.67,142.67),radius:9.33,caption:"2"},
+        Button{id:ButtonId::Skill2,center:vec2(vw-34.0,138.0),radius:9.33,caption:"3"},
+        Button{id:ButtonId::Dash,center:vec2(vw-12.67,135.33),radius:10.0,caption:"DASH"},
         Button{id:ButtonId::Interact,center:vec2(vw/2.0,163.0),radius:10.0,caption:"USE"},
     ]
 }
@@ -83,6 +84,9 @@ fn hero(
     assets: &Assets,
 ) {
     if inv>0 && time%4<2 {return;} // Parpadeo al recibir daño del HTML
+    // drawP en HTML siempre redondea a píxeles del Canvas original.
+    let x=x.round();
+    let y=y.round();
     let accent = hero_color(c);
     let anim = (time / 7 % 2) as f32;
     let foot = y - 1.0;
@@ -440,8 +444,8 @@ fn portal(w: &World, x: f32, cam: f32, open: bool) {
     }
 }
 fn enemy(e: &realm_core::Enemy, cam: f32, t: u64, player_x:f32, assets: &Assets) {
-    let x = e.x - cam;
-    let y = e.y;
+    let x = (e.x - cam).round();
+    let y = e.y.round();
     let scale = e.scale;
     let color = match e.kind {
         0 | 20..=39 => rgb(83, 190, 105),
@@ -639,7 +643,7 @@ fn vignette(vw:f32) {
 }
 pub fn draw_game(w: &World, vw: f32, assets: &Assets, name:&str,
     target:&RenderTarget, camera_y:f32,camera_x:f32,
-    fx:&crate::effects::VisualFx) {
+    fx:&crate::effects::VisualFx,legacy_ui:bool) {
     // El mundo se mueve verticalmente, pero el HUD y los controles permanecen
     // fijos en coordenadas de la pantalla; el Canvas HTML hace lo mismo.
     push_camera_state();
@@ -713,7 +717,7 @@ pub fn draw_game(w: &World, vw: f32, assets: &Assets, name:&str,
     rain(w,vw,cam,camera_y);
     pop_camera_state();
     vignette(vw);
-    crate::ui::draw_hud(w,vw,assets,name);
+    if legacy_ui {crate::ui::draw_hud(w,vw,assets,name);}
     if w.game_over {
         draw_rectangle(0.0, 0.0, vw, 180.0, rgba(0, 0, 0, 195));
         centered("HAS CAIDO", vw / 2.0, 80.0, 25.0, rgb(245, 89, 91));

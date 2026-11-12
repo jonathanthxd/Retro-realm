@@ -5,6 +5,7 @@ mod effects;
 mod render;
 mod scenery;
 mod ui;
+mod ui_native;
 mod sfx;
 
 use macroquad::audio::{load_sound, play_sound, stop_sound, PlaySoundParams, Sound};
@@ -94,6 +95,7 @@ async fn main() {
     let snapshot=std::env::var("RETRO_REALM_SNAPSHOT").ok();
     let mut snapshot_frames=0u32;
     let assets = assets::Assets::load().await;
+    let native_ui=assets.has_native_hud();
     let mut music = if snapshot.is_some() {
         Music{menu:None,forest:None,night:None,boss:None,active:-1}
     } else { Music::load().await };
@@ -263,10 +265,10 @@ async fn main() {
         match screen {
             Screen::Home => ui::draw_home(&world,virtual_width,chosen,home_page,&player_name,
                 world.player.level,&assets),
-            Screen::Playing => render::draw_game(&world,virtual_width,&assets,&player_name,&target,camera_y,camera_x,&effects),
+            Screen::Playing => render::draw_game(&world,virtual_width,&assets,&player_name,&target,camera_y,camera_x,&effects,!native_ui),
             Screen::Paused => {
-                render::draw_game(&world,virtual_width,&assets,&player_name,&target,camera_y,camera_x,&effects);
-                ui::draw_pause(virtual_width,audio_enabled);
+                render::draw_game(&world,virtual_width,&assets,&player_name,&target,camera_y,camera_x,&effects,!native_ui);
+                if !native_ui {ui::draw_pause(virtual_width,audio_enabled);}
             }
         }
 
@@ -283,6 +285,12 @@ async fn main() {
                 ..Default::default()
             },
         );
+        if native_ui && screen!=Screen::Home {
+            ui_native::draw_game(&world,&assets,&player_name);
+            if screen==Screen::Paused {
+                ui_native::draw_pause(&assets,audio_enabled);
+            }
+        }
         if let Some(kind)=snapshot.as_deref(){
             snapshot_frames+=1;
             if snapshot_frames>=12 {

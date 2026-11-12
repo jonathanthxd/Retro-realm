@@ -5,6 +5,9 @@ on:
     branches: [refactor/rust-macroquad-migration]
     paths:
       - 'apps/retro-realm/src/ui.rs'
+      - 'apps/retro-realm/src/ui_native.rs'
+      - 'apps/retro-realm/assets/sprites/ui_hd2_*.png'
+      - 'apps/retro-realm/assets/sprites/ui_dom_*.png'
       - 'apps/retro-realm/src/scenery.rs'
       - 'apps/retro-realm/src/render.rs'
       - 'apps/retro-realm/src/effects.rs'
