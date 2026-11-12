@@ -112,6 +112,8 @@ async fn main() {
     if let Some(kind)=snapshot.as_deref(){
         match kind {
             "selection"=>home_page=ui::HomePage::Selection,
+            "credits"=>home_page=ui::HomePage::Credits,
+            "pause"=>screen=Screen::Paused,
             "night"=>screen=Screen::Playing,
             "dark"=>{screen=Screen::Playing;world.map=MapId::DarkForest;},
             _=>{}

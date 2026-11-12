@@ -7,6 +7,10 @@ on:
       - 'apps/retro-realm/src/ui.rs'
       - 'apps/retro-realm/src/ui_native.rs'
       - 'apps/retro-realm/assets/sprites/ui_hd2_*.png'
+      - 'apps/retro-realm/assets/sprites/ui_home_*.png'
+      - 'apps/retro-realm/assets/sprites/ui_select_*.png'
+      - 'apps/retro-realm/assets/sprites/ui_credits.png'
+      - 'apps/retro-realm/assets/sprites/ui_pause_panel.png'
       - 'apps/retro-realm/assets/sprites/ui_dom_*.png'
       - 'apps/retro-realm/src/scenery.rs'
       - 'apps/retro-realm/src/render.rs'
@@ -41,7 +45,7 @@ jobs:
         run: |
           mkdir -p native-captures
           export LIBGL_ALWAYS_SOFTWARE=1
-          for scene in menu selection night dark; do
+          for scene in menu selection credits night dark pause; do
             echo "Capturando $scene"
             RETRO_REALM_SNAPSHOT="$scene" xvfb-run -a -s "-screen 0 960x540x24" timeout 80s ./target/debug/retro-realm
           done
