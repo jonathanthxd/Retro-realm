@@ -63,13 +63,20 @@ fn framed(x:f32,y:f32,w:f32,h:f32,selected:bool){
     }
 }
 fn button(x:f32,y:f32,w:f32,h:f32,title:&str,assets:&Assets) {
-    framed(x,y,w,h,true);
-    draw_rectangle(x+4.0,y+3.0,w-8.0,1.5,rgba(255,251,215,65));
+    // .bn del HTML: marco oro, bisel de acero, transición gris y reflejo.
+    draw_rectangle(x+1.0,y+3.0,w,h,rgb(0,0,0));
+    draw_rectangle(x-1.3,y-1.3,w+2.6,h+2.6,rgb(12,10,16));
+    draw_rectangle(x,y,w,h,rgb(221,174,60));
+    draw_rectangle(x+1.3,y+1.3,w-2.6,h-2.6,rgb(48,45,56));
+    draw_rectangle(x+2.4,y+2.4,w-4.8,h*0.43,rgb(106,100,112));
+    draw_rectangle(x+2.4,y+2.4+h*0.43,w-4.8,h*0.48-4.6,rgb(52,48,60));
+    draw_rectangle(x+3.0,y+2.2,w-6.0,1.0,rgba(255,255,235,100));
     font_centered(assets,title,x+w/2.0,y+h*0.68,
         if title.len()>10{7.0}else{9.5},rgb(249,233,186));
 }
 #[derive(Clone,Copy,PartialEq,Eq,Debug)]
-pub enum HomePage{Landing,Selection}
+pub enum HomePage{Landing,Selection,Credits}
+pub fn home_credits_rect(vw:f32)->Rect{Rect::new(vw-22.0,4.0,17.0,16.0)}
 pub fn home_play_rect(vw:f32)->Rect{Rect::new(vw-59.0,155.0,54.0,20.0)}
 pub fn home_hero_rect()->Rect{Rect::new(5.0,146.0,22.0,22.0)}
 pub fn home_name_rect(vw:f32)->Rect{Rect::new(vw/2.0-40.0,20.0,80.0,15.0)}
@@ -97,6 +104,14 @@ pub fn draw_home(
     draw_rectangle_lines(3.2,3.2,vw-6.4,173.6,0.7,rgba(237,197,97,150));
     draw_rectangle_lines(5.0,5.0,vw-10.0,170.0,0.3,rgba(255,233,139,80));
     if page==HomePage::Landing{
+        // Información de la versión original; la build nativa sigue en preview.
+        draw_text("v0.21-alpha",5.0,10.0,6.4,rgb(232,216,168));
+        let cr=home_credits_rect(vw);
+        draw_rectangle(cr.x,cr.y,cr.w,cr.h,rgb(12,18,29));
+        draw_rectangle_lines(cr.x,cr.y,cr.w,cr.h,1.0,rgb(212,220,235));
+        draw_rectangle(cr.x+4.0,cr.y+3.0,9.0,10.0,rgb(239,242,249));
+        draw_rectangle(cr.x+5.0,cr.y+5.0,7.0,1.0,rgb(52,56,74));
+        draw_rectangle(cr.x+5.0,cr.y+8.0,7.0,1.0,rgb(52,56,74));
         font_centered(assets,"RETRO REALM",vw/2.0,15.3,13.0,rgb(250,215,111));
         // La captura HTML utiliza un panel de ~237x43 px en 960x540.
         framed(vw/2.0-40.0,20.0,80.0,14.0,true);
@@ -106,10 +121,30 @@ pub fn draw_home(
         // Cuadro de héroe abajo a la izquierda, como HTML #hb.
         let r=home_hero_rect();
         framed(r.x,r.y,r.w,r.h,true);
-        portrait(assets,hero,r.x+2.0,r.y+1.0,18.0,18.0);
+        // #hb presenta el héroe completo (HF), no el retrato del HUD.
+        if let Some(sprite)=assets.hero(hero,0) {
+            draw_texture_ex(sprite,r.x+3.5,r.y+1.4,WHITE,DrawTextureParams{
+                dest_size:Some(vec2(15.0,19.2)),..Default::default()
+            });
+        }else{portrait(assets,hero,r.x+2.0,r.y+1.0,18.0,18.0);}
         font_centered(assets,"HÉROE",r.x+r.w/2.0,r.y+r.h+6.3,6.7,rgb(251,220,151));
         let r=home_play_rect(vw);
         button(r.x,r.y,r.w,r.h,"JUGAR",assets);
+    }else if page==HomePage::Credits{
+        // Panel de créditos con pergamino dorado del HTML (línea ~1166).
+        draw_rectangle(0.0,0.0,vw,180.0,rgba(0,0,0,185));
+        let x=vw/2.0-64.0;let y=33.0;
+        draw_rectangle(x-2.0,y-2.0,132.0,120.0,rgb(42,26,12));
+        draw_rectangle(x,y,128.0,116.0,rgb(103,70,36));
+        draw_rectangle(x+1.5,y+1.5,125.0,39.0,rgb(230,212,164));
+        draw_rectangle(x+1.5,y+40.5,125.0,74.0,rgb(200,178,124));
+        font_centered(assets,"CRÉDITOS",vw/2.0,y+24.0,13.0,rgb(90,52,20));
+        font_centered(assets,"Creador",vw/2.0,y+42.0,7.0,rgb(122,90,48));
+        font_centered(assets,"Angelfer360",vw/2.0,y+57.0,12.0,rgb(42,22,8));
+        font_centered(assets,"Colaborador",vw/2.0,y+71.0,7.0,rgb(122,90,48));
+        font_centered(assets,"Xx_Luis_xX",vw/2.0,y+87.0,12.0,rgb(42,22,8));
+        font_centered(assets,"Toca para cerrar",vw/2.0,y+103.0,
+            6.4,rgb(122,90,48));
     }else{
         draw_rectangle(0.0,0.0,vw,180.0,rgba(0,0,0,175));
         font_centered(assets,"ELEGIR PERSONAJE",vw/2.0,42.0,10.0,rgb(246,213,110));

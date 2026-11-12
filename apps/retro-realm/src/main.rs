@@ -142,7 +142,10 @@ async fn main() {
             }
             for point in controls::pressed_points(virtual_width) {
                 if home_page==ui::HomePage::Landing {
-                    if ui::home_hero_rect().contains(point) {
+                    if ui::home_credits_rect(virtual_width).contains(point){
+                        home_page=ui::HomePage::Credits;
+                        editing_name=false;
+                    } else if ui::home_hero_rect().contains(point) {
                         home_page=ui::HomePage::Selection;
                         editing_name=false;
                     } else if ui::home_name_rect(virtual_width).contains(point){
@@ -156,7 +159,7 @@ async fn main() {
                         editing_name=false;
                         accumulator=0.0;
                     }
-                }else{
+                }else if home_page==ui::HomePage::Selection{
                     for i in 0..3 {
                         if ui::home_selection_rect(i,virtual_width).contains(point) {
                             chosen=HeroClass::from_index(i);
@@ -165,7 +168,12 @@ async fn main() {
                     if ui::home_back_rect(virtual_width).contains(point){
                         home_page=ui::HomePage::Landing;
                     }
+                }else if home_page==ui::HomePage::Credits {
+                    home_page=ui::HomePage::Landing;
                 }
+            }
+            if is_key_pressed(KeyCode::Escape) && home_page!=ui::HomePage::Landing {
+                home_page=ui::HomePage::Landing;
             }
             if editing_name {
                 while let Some(ch)=get_char_pressed(){
