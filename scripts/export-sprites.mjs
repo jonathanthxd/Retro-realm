@@ -209,9 +209,11 @@ try {
   // Preserve real gradients, metallic borders, illustrations and shadows.
   await page.addStyleTag({content:[
     'html,body,#app{background:transparent!important}',
-    '#cv,#home,#menu,.fb,#ap{visibility:hidden!important}',
-    '#ctl>*{visibility:hidden!important}',
-    '#hd2{visibility:hidden!important;display:flex!important}',
+    '#app{display:flex!important}',
+    '#cv,#home,#menu{visibility:hidden!important}',
+    '.fb,#ap{visibility:hidden}',
+    '#ctl>*{visibility:hidden}',
+    '#hd2{visibility:hidden;display:flex!important}',
     '#hd2 #h2n,#hd2 #h2l,#hd2 #h2mt,#hd2 #h2ht,',
     '#hd2 #h2g,#hd2 #h2d,#hd2 .fl{visibility:hidden!important}',
   ].join(' ')});
