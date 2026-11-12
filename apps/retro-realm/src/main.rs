@@ -215,12 +215,38 @@ async fn main() {
                 accumulator = 0.0;
             }
             if screen == Screen::Paused {
-                if controls::sound_hit(virtual_width) {audio_enabled=!audio_enabled;}
-                if is_key_pressed(KeyCode::H) || controls::menu_hit(virtual_width) {
-                    screen = Screen::Home;
-                    effects.clear();
-                    home_page = ui::HomePage::Landing;
-                    accumulator = 0.0;
+                let has_dom_pause=native_ui && assets.dom_pause_panel().is_some();
+                let touches=if has_dom_pause {
+                    controls::pressed_points(virtual_width)
+                } else { Vec::new() };
+                let clicked=|key:&str| {
+                    touches.iter().any(|p|ui_native::pause_hit(&assets,key,
+                        *p*3.0,virtual_width*3.0).unwrap_or(false))
+                };
+                if has_dom_pause {
+                    if clicked("music")||clicked("sound") {audio_enabled=!audio_enabled;}
+                    if clicked("resume") {
+                        screen=Screen::Playing;
+                        accumulator=0.0;
+                    }else if clicked("character"){
+                        screen=Screen::Home;
+                        home_page=ui::HomePage::Selection;
+                        effects.clear();
+                        accumulator=0.0;
+                    }else if is_key_pressed(KeyCode::H)||clicked("menu"){
+                        screen=Screen::Home;
+                        effects.clear();
+                        home_page=ui::HomePage::Landing;
+                        accumulator=0.0;
+                    }
+                }else{
+                    if controls::sound_hit(virtual_width){audio_enabled=!audio_enabled;}
+                    if is_key_pressed(KeyCode::H)||controls::menu_hit(virtual_width){
+                        screen=Screen::Home;
+                        effects.clear();
+                        home_page=ui::HomePage::Landing;
+                        accumulator=0.0;
+                    }
                 }
             } else if screen == Screen::Playing {
                 if world.game_over
