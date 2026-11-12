@@ -236,6 +236,7 @@ try {
   for(let cl=0;cl<3;cl++){
     await page.evaluate(async index=>{
       p.cls=index;
+      if(typeof CLS!=='undefined')CLS=index;
       if(typeof icons==='function')icons();
       if(typeof apIcon==='function')apIcon();
       if(typeof window.hud==='function')window.hud();
