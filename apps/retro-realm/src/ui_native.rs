@@ -2,6 +2,7 @@
  //! La escena continúa a 180px; estos elementos NO pasan por el render target
  //! pixelado. Las dimensiones son CSS-px a 960×540 y están ancladas como el DOM.
 use crate::assets::Assets;
+use crate::layout::{UiLayout,ControlPrefs};
 use macroquad::prelude::*;
 use realm_core::{World,HeroClass};
 
@@ -10,9 +11,7 @@ fn rgba(r:u8,g:u8,b:u8,a:u8)->Color {Color::from_rgba(r,g,b,a)}
 
 /// Resolución CSS de referencia para un viewport landscape. En una pantalla
 /// más ancha se mantienen tamaños físicos y las anclas al borde.
-pub fn css_width()->f32 {
-    (540.0*screen_width()/screen_height().max(1.0)).max(960.0)
-}
+pub fn css_width()->f32 {UiLayout::current().width}
 fn class_index(c:HeroClass)->usize{
     match c { HeroClass::LunarMage=>0,HeroClass::Huntress=>1,HeroClass::CyberRaccoon=>2 }
 }
@@ -176,37 +175,22 @@ fn draw_hud(world:&World,assets:&Assets,name:&str){
             12.0,rgb(138,226,255),false);
     }
 }
-fn place(rect:Rect,id:&str,vw:f32)->Rect{
-    // HTML #ctl tiene botones anclados a left / right / center.
-    let x=match id {
-        "bl"|"br"=>rect.x,
-        "ap"=>rect.x+(vw-960.0)*0.5,
-        _=>rect.x+vw-960.0,
-    };
-    Rect::new(x,rect.y,rect.w,rect.h)
-}
-fn dom_button(assets:&Assets,id:&str,class:HeroClass,vw:f32) {
-    let Some(rect)=assets.dom_layout(id) else{return;};
-    let Some(sprite)=assets.dom_button(id,class) else{return;};
-    let rect=place(rect,id,vw);
-    draw_texture_ex(sprite,rect.x,rect.y,WHITE,DrawTextureParams{
-        dest_size:Some(vec2(rect.w,rect.h)),..Default::default()
+fn draw_control(assets:&Assets,id:&str,class:HeroClass,
+    layout:&UiLayout,prefs:&ControlPrefs)->Option<Rect> {
+    let src=assets.dom_layout(id)?;
+    let sprite=if id=="pause"{assets.dom_pause()?}
+        else {assets.dom_button(id,class)?};
+    let r=layout.control_rect(id,src,prefs);
+    draw_texture_ex(sprite,r.x.round(),r.y.round(),WHITE,DrawTextureParams{
+        dest_size:Some(vec2(r.w,r.h)),..Default::default()
     });
+    Some(r)
 }
-fn controls(w:&World,assets:&Assets,vw:f32){
-    for id in ["bl","br","s0","s1","s2","s3","bs","bj","bm"] {
-        dom_button(assets,id,w.player.class,vw);
+fn controls(w:&World,assets:&Assets,layout:&UiLayout,prefs:&ControlPrefs){
+    for id in ["bl","br","s0","s1","s2","s3","bs","bj","bm","ap","pause"] {
+        if prefs.joystick&&(id=="bl"||id=="br"){continue;}
+        draw_control(assets,id,w.player.class,layout,prefs);
     }
-    // Original: el botón ap muestra la clase en la parte superior central.
-    dom_button(assets,"ap",w.player.class,vw);
-    if let (Some(sprite),Some(layout))=(assets.dom_pause(),assets.dom_layout("pause")) {
-        let r=place(layout,"pause",vw);
-        draw_texture_ex(sprite,r.x,r.y,WHITE,DrawTextureParams{
-            dest_size:Some(vec2(r.w,r.h)),..Default::default()
-        });
-    }
-    // Los DOM .sk usan --cd para oscurecer la parte inferior del botón.
-    // Hacemos solo una película ligera para mantener visibles los iconos.
     let cds=[
         ("s0",w.player.cooldowns[0],60u16),
         ("s1",w.player.cooldowns[1],120),
@@ -216,33 +200,50 @@ fn controls(w:&World,assets:&Assets,vw:f32){
     ];
     for (id,remain,total) in cds {
         if remain==0{continue;}
-        if let Some(r)=assets.dom_layout(id) {
-            let r=place(r,id,vw);
+        if let Some(src)=assets.dom_layout(id) {
+            let r=layout.control_rect(id,src,prefs);
             let fraction=remain as f32/total as f32;
-            let overlay_height=r.h*fraction.clamp(0.0,1.0);
-            draw_rectangle(r.x+7.0,r.y+r.h-overlay_height-6.0,
-                (r.w-14.0).max(0.0),overlay_height.min(r.h-14.0).max(0.0),
-                rgba(4,7,17,145));
+            let height=(r.h-14.0)*fraction.clamp(0.0,1.0);
+            draw_rectangle(r.x+7.0,r.y+r.h-7.0-height,
+                (r.w-14.0).max(0.0),height.max(0.0),rgba(4,7,17,145));
         }
     }
 }
+pub fn control_hit(assets:&Assets,id:&str,point:Vec2,prefs:&ControlPrefs)->bool{
+    let layout=UiLayout::current();
+    assets.dom_layout(id).map(|src|layout.hit_rect(
+        layout.control_rect(id,src,prefs)).contains(point)).unwrap_or(false)
+}
+fn draw_defeat(w:&World,assets:&Assets,layout:&UiLayout){
+    if !w.game_over{return;}
+    draw_rectangle(0.0,0.0,layout.width,layout.height,rgba(0,0,0,184));
+    let cx=layout.width*0.5;
+    native_outlined(assets,"HAS CAÍDO",cx,185.0,49.0,rgb(255,106,106));
+    native_text(assets,&format!("Nivel {} · Oro {}",w.player.level,w.player.gold),
+        cx,255.0,26.0,WHITE,true);
+    let r=Rect::new(cx-180.0,290.0,360.0,68.0);
+    draw_rectangle(r.x,r.y,r.w,r.h,rgba(28,36,53,220));
+    draw_rectangle_lines(r.x,r.y,r.w,r.h,2.0,rgb(236,190,82));
+    native_text(assets,"Toca para reiniciar",cx,r.y+33.0,
+        28.0,rgb(206,255,238),true);
+}
+pub fn defeat_hit(point:Vec2)->bool{
+    let layout=UiLayout::current();
+    Rect::new(layout.width*0.5-180.0,290.0,360.0,68.0).contains(point)
+}
 /// Invocar una sola vez al final del frame, tras componer el mundo de 180px.
 pub fn draw_game(w:&World,assets:&Assets,name:&str,
-    camera_x:f32,camera_y:f32,world_width:f32){
+    camera_x:f32,camera_y:f32,world_width:f32,prefs:&ControlPrefs){
     if !assets.has_native_hud(){return;}
     push_camera_state();
-    let vw=css_width();
-    // En el framebuffer principal no se aplica el flip_y del render target.
-    // Invertir la cámara nativa mantiene origen (0,0) arriba a la izquierda.
-    let mut ui_camera=Camera2D::from_display_rect(Rect::new(0.0,0.0,vw,540.0));
-    ui_camera.zoom.y=-ui_camera.zoom.y;
-    set_camera(&ui_camera);
-    // Radial light and player tag are in this full-resolution layer, then
-    // the HUD stays above both (as the original CSS stack does).
+    let layout=UiLayout::current();
+    let vw=layout.width;
+    set_camera(&layout.camera());
     draw_scene_lights(w,assets,camera_x,camera_y,world_width,vw);
     draw_world_name(w,assets,name,camera_x,camera_y,world_width,vw);
     draw_hud(w,assets,name);
-    controls(w,assets,vw);
+    controls(w,assets,&layout,prefs);
+    draw_defeat(w,assets,&layout);
     pop_camera_state();
 }
 /// La UI de Inicio y Selección procede del DOM real (#hm/#hs), no de
@@ -253,59 +254,58 @@ pub fn draw_home(
 ){
     if !assets.has_native_menu(){return;}
     push_camera_state();
-    let vw=css_width();
-    // En el framebuffer principal no se aplica el flip_y del render target.
-    // Invertir la cámara nativa mantiene origen (0,0) arriba a la izquierda.
-    let mut ui_camera=Camera2D::from_display_rect(Rect::new(0.0,0.0,vw,540.0));
-    ui_camera.zoom.y=-ui_camera.zoom.y;
-    set_camera(&ui_camera);
-    let x=(vw-960.0)*0.5;
+    let layout=UiLayout::current();
+    set_camera(&layout.camera());
+    let menu=layout.source_rect(Rect::new(0.0,0.0,960.0,540.0));
     let selected=match page{
         crate::ui::HomePage::Landing=>assets.dom_home(hero),
         crate::ui::HomePage::Selection=>assets.dom_selection(hero),
         crate::ui::HomePage::Credits=>assets.dom_credits().or_else(||assets.dom_home(hero)),
     };
     if let Some(image)=selected {
-        draw_texture_ex(image,x,0.0,WHITE,DrawTextureParams{
-            dest_size:Some(vec2(960.0,540.0)),..Default::default()
+        draw_texture_ex(image,menu.x.round(),menu.y.round(),WHITE,DrawTextureParams{
+            dest_size:Some(vec2(menu.w,menu.h)),..Default::default()
         });
     }
     if page==crate::ui::HomePage::Landing {
         if let Some(r)=assets.dom_menu_rect("name"){
-            native_text(assets,name,x+r.x+r.w*0.5,r.y+r.h*0.49,
-                20.0,rgb(246,232,184),true);
+            let r=layout.source_rect(r);
+            native_text(assets,name,r.x+r.w*0.5,r.y+r.h*0.49,
+                (20.0*layout.source_scale()).max(15.0),
+                rgb(246,232,184),true);
         }
         if let Some(r)=assets.dom_menu_rect("level"){
+            let r=layout.source_rect(r);
             native_text(assets,&format!("NIVEL {}",level),
-                x+r.x+r.w*0.5,r.y+r.h*0.52,13.0,rgb(240,208,112),true);
+                r.x+r.w*0.5,r.y+r.h*0.52,
+                (13.0*layout.source_scale()).max(10.0),
+                rgb(240,208,112),true);
         }
     }
     pop_camera_state();
 }
 pub fn pause_hit(assets:&Assets,key:&str,point:Vec2,ui_width:f32)->Option<bool>{
     let r=assets.dom_pause_rect(key)?;
-    let x=r.x+(ui_width-960.0)*0.5;
-    Some(Rect::new(x,r.y,r.w,r.h).contains(point))
+    let layout=UiLayout::new(ui_width,540.0);
+    Some(layout.hit_rect(layout.source_rect(r)).contains(point))
 }
 pub fn menu_hit(assets:&Assets,key:&str,point:Vec2,ui_width:f32)->Option<bool>{
     let r=assets.dom_menu_rect(key)?;
-    let x=r.x+(ui_width-960.0)*0.5;
-    Some(Rect::new(x,r.y,r.w,r.h).contains(point))
+    let layout=UiLayout::new(ui_width,540.0);
+    Some(layout.hit_rect(layout.source_rect(r)).contains(point))
 }
 /// Pantalla de pausa a resolución CSS. El modal del HTML original mide
 /// máximo 420px, tiene doble borde dorado y fondo acero violeta.
 pub fn draw_pause(assets:&Assets,audio_enabled:bool){
     push_camera_state();
-    let vw=css_width();
-    // En el framebuffer principal no se aplica el flip_y del render target.
-    // Invertir la cámara nativa mantiene origen (0,0) arriba a la izquierda.
-    let mut ui_camera=Camera2D::from_display_rect(Rect::new(0.0,0.0,vw,540.0));
-    ui_camera.zoom.y=-ui_camera.zoom.y;
-    set_camera(&ui_camera);
+    let layout=UiLayout::current();
+    let vw=layout.width;
+    set_camera(&layout.camera());
     draw_rectangle(0.0,0.0,vw,540.0,rgba(0,0,0,204));
     // Panel exacto del HTML (Gradientes, serif, bisel y controles CSS).
     if let (Some(panel),Some(frame))=(assets.dom_pause_panel(),assets.dom_pause_rect("frame")) {
-        draw_texture_ex(panel,frame.x+(vw-960.0)*0.5,frame.y,WHITE,
+        let frame=layout.source_rect(frame);
+        draw_texture_ex(panel,frame.x.round(),frame.y.round(),WHITE,
             DrawTextureParams{
                 dest_size:Some(vec2(frame.w,frame.h)),
                 ..Default::default()
@@ -361,15 +361,7 @@ pub fn draw_pause(assets:&Assets,audio_enabled:bool){
 #[cfg(test)]
 mod tests{
     use super::*;
-    #[test]
-    fn control_anchor_not_stretched(){
-        let r=Rect::new(860.0,440.0,90.0,90.0);
-        assert_eq!(place(r,"bm",960.0).x,860.0);
-        assert_eq!(place(r,"bm",1200.0).x,1100.0);
-        assert_eq!(place(Rect::new(10.0,454.0,74.0,74.0),"bl",1200.0).x,10.0);
-    }
-    #[test]
-    fn glyph_map_has_spanish_chars(){
+    #[test] fn glyph_map_has_spanish_chars(){
         assert_eq!(source_glyph('A'),33);
         assert!(source_glyph('ñ')>=95);
     }
