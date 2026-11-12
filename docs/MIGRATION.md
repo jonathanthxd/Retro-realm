@@ -19,7 +19,7 @@ Reimplementar **el mismo juego** en Rust nativo, sin WebView ni motor externo, m
 | Sprites, escena y decoración | PNGs originales, metadatos de ancla y poses adicionales, cielo dithered, montañas, nubes, vegetación, bruma y haces de luz | Revisión visual de anclas y animaciones específicas restantes |
 | Paralaje, cámara y Bosque Oscuro | Capas originales, lluvia/salpicaduras/relámpagos, seguimiento vertical y horizontal amortiguado | Afinar ciclo de clima y calidad en Android |
 | Audio | OGG desde MP3 propios, efectos sintetizados y mute | Comparación auditiva, volumen independiente de música/FX |
-| UI y controles táctiles | Menú original con créditos funcionales y botón metal, selección separada, atlas RetroPx, HUD y barra de jefe, pictogramas | Ajustes/joystick/escala/posiciones y pausa completa |
+| UI y controles táctiles | Captura del DOM HTML original a resolución CSS (HUD #hd2, menús, selección, créditos, controles y pausa); datos dinámicos nativos y cajas de toque originales | Joystick/mover controles/opciones avanzadas aún no implementadas funcionalmente, revisión Android real |
 | Perfil/ajustes y guardado | Nombre editable durante el menú por teclado PC, sin persistencia | Teclado virtual Android, mejor nivel, preferencias y controles persistentes |
 | Android APK | Compilación nativa confirmada en CI | Arranque/emulador/controles/audio/FPS en dispositivos reales |
 
@@ -53,3 +53,7 @@ Esta rama ahora incluye `scenery.rs` (capas finales de cielo/montañas/nubes), `
 ### Visual vNext (segundo pase)
 
 Se incluye `effects.rs` con partículas/aciertos, números de daño, anillos, rayos y señales de ataque; sprites de animaciones reales, metadatos Canvas y barra segmentada de jefe. Prueba de no interferencia con el juego nativo: `cargo test -p retro-realm --bin retro-realm`. El APK preview se mantiene separado de `main`.
+
+### Visual Clarity v7 (tercer pase): arquitectura de render de fidelidad
+
+El juego conserva su framebuffer 180px pero los componentes `#hd2`, `#ctl`, `#home`, `#hs`, `#crm` y `#pzp` se capturan de forma transparente desde el HTML original, sin reconstruir las decoraciones a mano. `ui_native.rs` los renderiza después del escalado 180px y pone encima los datos cambiantes, conservando el pixel art de personajes con filtrado nearest y posiciones redondeadas. Las seis capturas CI fueron comparadas con referencias del HTML; hay mejoras importantes en nitidez, pero todavía se requiere aprobación visual y pruebas reales.

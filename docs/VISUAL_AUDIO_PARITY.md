@@ -1,5 +1,24 @@
 # Retro Realm — fidelidad visual y auditiva
 
+## Actualización Visual Clarity v7 — renderizado de la UI original
+
+**Causa confirmada con el HTML:** el mundo se dibuja en Canvas de 180 px de alto (`#cv`), pero el HUD final (`#hd2`), inicio (`#home`), selección (`#hs`), pausa (`#pzp`) y controles táctiles (`#ctl`) se componen en CSS al tamaño de pantalla. En la primera APK de Rust, todo se rasterizaba a 180 px y después se ampliaba. Eso hacía que el HUD se viese innecesariamente pixelado incluso con arte correcto.
+
+**Corrección implementada en `refactor/rust-macroquad-migration`:**
+
+- `scripts/export-sprites.mjs` abre el HTML original en Chrome e **imprime los elementos DOM finales** en PNG transparentes a 960×540: `ui_hd2_*.png`, `ui_dom_*.png`, `ui_home_*.png`, `ui_select_*.png`, `ui_credits.png`, `ui_pause_panel.png`. También exporta las cajas CSS originales en `ui_*_layout.csv`.
+- `assets.rs` carga esos assets por clase con filtrado de imagen adecuado. `ui_native.rs` los compone **después** del framebuffer retro (HUD, vida/maná dinámicos, nombre/NV/oro/diamantes, menú, selección, créditos, pausa y controles), con una cámara cuya orientación ya se corrigió.
+- `main.rs` conserva el juego a 320–480×180, pasa la UI CSS al framebuffer de pantalla y utiliza rectángulos originales para pulsaciones en menús y botones básicos de pausa. La UI vieja se mantiene únicamente como fallback si faltasen assets.
+- `render.rs` conserva sprites originales con filtrado `Nearest` y redondea píxeles del jugador/enemigos en coordenadas de cámara para evitar vibraciones.
+- `Cargo.toml` versión Android de preview **`version_code=7`**; paquete aislado `com.pixelquest.game.preview`.
+
+**Pruebas terminadas:** [Rust CI](https://github.com/jonathanthxd/Retro-realm/actions/runs/43136143942), [6 capturas nativas: menú, selección, créditos, nocturno, oscuro y pausa](https://github.com/jonathanthxd/Retro-realm/actions/runs/43136139122), [APK Android](https://github.com/jonathanthxd/Retro-realm/actions/runs/43136138953) concluyeron correctamente. Las capturas muestran una mejora muy grande en la fidelidad visual del HUD y menús, **no una certificación automática de paridad al 100%**.
+
+**Aún falta:** probar la APK en móviles reales y distintas relaciones de aspecto/safe areas, ajustar diferencias residuales en composiciones y combate, persistencia de preferencias, y activar opciones avanzadas de pausa (joystick, mover/restablecer controles, escalas, estilos de música y volúmenes independientes). Actualmente esas opciones **se ven como el HTML, pero no todas ejecutan su acción**. La música del Bosque Nocturno sigue sin replicar el secuenciador WebAudio.
+
+---
+
+
 ## Cambio de prioridad
 
 La prueba del APK de migración ha confirmado una diferencia audiovisual muy grande respecto al HTML original. La arquitectura Rust/Macroquad es una base para conservar, pero **no se considera un resultado visual ni sonoro satisfactorio**. No se publicará como sustituto ni se fusionará a main por el mero hecho de compilar.

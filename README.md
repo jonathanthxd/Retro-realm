@@ -15,7 +15,8 @@ Retro Realm es un juego de acción y plataformas 2D con tres personajes, enemigo
 | `docs/MIGRATION.md` | Comparación de sistemas, límites y criterios de paridad |
 | `docs/ANDROID.md` | Build APK y guía de prueba en Android |
 | `docs/VISUAL_AUDIO_PARITY.md` | Auditoría audiovisual, primera actualización visual y pendientes |
-| `apps/retro-realm/src/scenery.rs` y `ui.rs` | Capas de paisaje originales y recuperación de interfaz |
+| `apps/retro-realm/src/scenery.rs` y `ui.rs` | Capas de paisaje y fallback de interfaz |
+| `apps/retro-realm/src/ui_native.rs` | HUD, controles y menús originales a resolución nativa de pantalla, sin pérdida por escalado del mundo |
 
 ### Ejecutar en Windows
 
@@ -40,7 +41,7 @@ Los controles de PC incluyen A/D o flechas para moverte, espacio para saltar, F 
 
 El workflow [Rust / Macroquad — Android APK experimental](https://github.com/jonathanthxd/Retro-realm/actions/workflows/rust-android.yml) compila APKs de prueba. Abre una ejecución exitosa y descarga el artefacto **`RetroRealm-Rust-APK-PRELIMINAR`**.
 
-La actualización visual vNext recupera más poses originales, FX de combate, rayos, números de daño, créditos, menú de acero, barra de jefe, lluvia, animación de enemigos y cámaras amortiguadas. Las [capturas de referencia HTML](https://github.com/jonathanthxd/Retro-realm/actions/workflows/visual-reference.yml) pueden compararse con las [capturas nativas Rust](https://github.com/jonathanthxd/Retro-realm/actions/workflows/rust-screenshots.yml). **El aspecto todavía no ha sido validado como equivalente al original.**
+La actualización **Visual Clarity v7** conserva los fondos/actores pixel art en el framebuffer original de 180px, pero renderiza el HUD, controles, menú, selección, créditos y pausa del HTML real **después**, a resolución de pantalla mediante capturas de CSS. Esta corrección resuelve el aspecto excesivamente pixelado de la UI de las primeras APKs. También incluye poses originales, FX de combate y cámaras amortiguadas. Las [capturas de referencia HTML](https://github.com/jonathanthxd/Retro-realm/actions/workflows/visual-reference.yml) pueden compararse con las [capturas nativas Rust](https://github.com/jonathanthxd/Retro-realm/actions/workflows/rust-screenshots.yml). **El aspecto todavía no ha sido validado como equivalente al original.**
 
 Este APK usa el identificador `com.pixelquest.game.preview` para poder instalarse junto al juego original. **No es una versión final ni ha sustituido el WebView original.** Requiere pruebas en móviles reales y comparación funcional antes de cualquier reemplazo.
 
