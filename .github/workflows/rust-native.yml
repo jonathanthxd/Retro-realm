@@ -31,3 +31,5 @@ jobs:
         run: cargo check --workspace --all-targets
       - name: Pruebas de simulacion
         run: cargo test -p realm-core
+      - name: Pruebas de efectos y aislamiento de gameplay
+        run: cargo test -p retro-realm --bin retro-realm

@@ -348,7 +348,7 @@ fn rain(w:&World,vw:f32,cam:f32,camera_y:f32) {
         }
     }
     // Un destello poco frecuente con la silueta ramificada de zRain/ZLT.
-    let phase=w.tick%1667;
+    let phase=(w.tick+233)%1667;
     if phase<16 {
         let a=((16-phase) as f32/16.0).max(0.0);
         draw_rectangle(0.0,camera_y-8.0,vw,188.0,

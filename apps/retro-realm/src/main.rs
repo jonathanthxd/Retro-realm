@@ -152,7 +152,6 @@ async fn main() {
                         effects.clear();
                         screen=Screen::Playing;
                         camera_y=0.0;
-                camera_x=0.0;
                         camera_x=0.0;
                         editing_name=false;
                         accumulator=0.0;
