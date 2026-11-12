@@ -151,8 +151,48 @@ fn bar(x:f32,y:f32,w:f32,val:f32,red:bool){
     draw_rectangle(x,y,fill,4.5,if red{rgb(145,23,39)}else{rgb(31,71,189)});
     draw_rectangle(x,y,fill,1.5,if red{rgb(254,136,145)}else{rgb(143,209,255)});
 }
+fn boss_bar(w:&World,vw:f32,assets:&Assets){
+    let Some(boss)=w.boss() else{return;};
+    let current:f32=w.enemies.iter().filter(|e|e.boss).map(|e|e.hp.max(0.0)).sum();
+    let total:f32=w.enemies.iter().filter(|e|e.boss).map(|e|e.max_hp.max(1.0)).sum();
+    let hp=(current/total.max(1.0)).clamp(0.0,1.0);
+    // ZBossBar original: 212px, nueve segmentos, remates plateados y calavera.
+    let x=(vw-212.0)/2.0;
+    let y=12.0;
+    draw_rectangle(x-7.0,y-1.0,226.0,13.0,rgb(12,8,20));
+    draw_rectangle(x-5.0,y,222.0,11.0,rgb(46,30,64));
+    draw_rectangle(x,y+1.0,212.0,9.0,rgb(22,10,28));
+    let width=212.0*hp;
+    draw_rectangle(x,y+1.0,width,9.0,rgb(184,40,56));
+    draw_rectangle(x,y+1.0,width,2.0,rgb(238,106,118));
+    draw_rectangle(x,y+8.0,width,2.0,rgb(112,20,36));
+    for i in 1..9{
+        draw_rectangle(x+(212*i/9) as f32-1.0,y,2.0,11.0,rgb(26,14,38));
+    }
+    for side in [-1.0f32,1.0]{
+        let ex=if side<0.0{x-9.0}else{x+221.0};
+        draw_rectangle(ex-2.0,y-2.0,5.0,15.0,rgb(232,228,240));
+        draw_rectangle(ex+side*3.0-1.0,y-4.0,3.0,4.0,rgb(232,228,240));
+        draw_rectangle(ex+side*3.0-1.0,y+11.0,3.0,4.0,rgb(232,228,240));
+        draw_rectangle(ex-1.0,y,3.0,11.0,rgb(46,30,64));
+    }
+    let cx=vw/2.0;
+    draw_rectangle(cx-14.0,y-6.0,28.0,6.0,rgb(22,10,28));
+    for i in -4i32..=4 {
+        draw_rectangle(cx+i as f32*3.0-1.0,
+            y-8.0+(i&1) as f32*2.0-if i.abs()>2{2.0}else{0.0},
+            2.0,6.0,rgb(46,30,64));
+    }
+    draw_circle(cx,y-4.0,5.0,rgb(232,228,240));
+    draw_rectangle(cx-3.0,y-1.0,6.0,3.0,rgb(232,228,240));
+    draw_rectangle(cx-3.0,y-5.0,2.0,2.0,rgb(22,10,28));
+    draw_rectangle(cx+1.0,y-5.0,2.0,2.0,rgb(22,10,28));
+    draw_rectangle(cx-1.0,y-2.0,2.0,1.0,rgb(22,10,28));
+    font_centered(assets,boss.name(),cx,y+22.0,7.0,rgb(240,208,112));
+}
 pub fn draw_hud(w:&World,vw:f32,assets:&Assets,name:&str){
     let p=&w.player;
+    boss_bar(w,vw,assets);
     let hp=(p.hp/p.max_hp).clamp(0.0,1.0);
     let mp=(p.mp/p.max_mp).clamp(0.0,1.0);
     // HUD DOM final del HTML: #hd2, con retrato, nombre y barras.
@@ -193,15 +233,10 @@ pub fn draw_hud(w:&World,vw:f32,assets:&Assets,name:&str){
     let xp=(p.xp as f32/(p.level as f32*30.0).max(1.0)).clamp(0.0,1.0);
     draw_rectangle(36.8,48.8,57.0,1.4,rgb(20,20,30));
     draw_rectangle(36.8,48.8,57.0*xp,1.4,rgb(240,202,77));
-    centered(w.map.name(),vw*0.58,10.0,9.5,rgb(243,212,158));
-    centered(&format!("{}/{}",w.killed.min(w.map.quota()),w.map.quota()),
-        vw*0.58,19.0,8.0,rgb(203,228,225));
-    if let Some(b)=w.boss(){
-        let bw=vw*0.46;
-        oct(vw/2.0-bw/2.0,26.0,bw,10.0,2.5,rgb(19,13,30),rgb(232,185,83));
-        let fill=(b.hp/b.max_hp).clamp(0.0,1.0)*(bw-6.0);
-        draw_rectangle(vw/2.0-bw/2.0+3.0,29.0,fill,4.0,rgb(204,48,61));
-        centered(b.name(),vw/2.0,25.0,9.0,rgb(246,212,171));
+    if w.boss().is_none() {
+        font_centered(assets,w.map.name(),vw*0.58,10.0,9.0,rgb(243,212,158));
+        font_centered(assets,&format!("{}/{}",w.killed.min(w.map.quota()),w.map.quota()),
+            vw*0.58,19.0,8.0,rgb(203,228,225));
     }
     // Botón de pausa estilo engranaje/metálico, reemplaza la caja azul vieja.
     framed(vw-23.0,3.0,18.0,18.0,true);
