@@ -38,3 +38,23 @@ La prueba del APK de migración ha confirmado una diferencia audiovisual muy gra
 6. Mantener el PR #1 como borrador y la rama main intacta hasta la aceptación audiovisual del usuario.
 
 El objetivo es **paridad del juego original**, no simplemente un juego funcional con la misma temática.
+## Visual vNext — segunda pasada (11 noviembre 2026)
+
+Cambios **implementados en el código** sobre la rama Rust:
+
+1. **Animación original:** el exportador ahora extrae caminar, idle (4 poses), salto, caída, casteo y ataque por clase; OGRE sprites de golpe; anclas exactas Canvas guardadas en \`sprite_meta.csv\`. \`assets.rs\` y \`render.rs\` usan esos metadatos.
+2. **FX a 60 Hz:** \`effects.rs\` gestiona chispas, números flotantes, daño, impactos, nivel, dash, escudo, anillos y rayos. Tiene RNG visual independiente y pool de partículas limitado a 240. Se verificó compilación y pruebas en CI; \`cargo test -p retro-realm --bin retro-realm\` comprueba aislamiento del gameplay y límites.
+3. **Enemigos y proyectiles:** squish/stretch de slimes, fotogramas de ataque de ogros, casteos/avisos enemigos y estela de proyectiles.
+4. **Jefes:** barra de 212 unidades con divisiones, coronación y calavera del original; señales de golpes y efectos del Rey.
+5. **Atmósfera:** cámara horizontal suavizada además de la vertical; lluvia de 130 trazos, salpicaduras y relámpagos, viñeta posterior al paisaje y anterior al HUD.
+6. **Inicio:** botón JUGAR con degradado de acero, héroe completo en su miniatura, versión original en la esquina y créditos del juego en una ventana funcional.
+7. **QA:** workflow \`rust-screenshots.yml\` recompila el render al cambiar arte/código y permite compararlo con \`visual-reference.yml\`. APK con \`version_code=6\` y package preview aislado.
+
+### Pendientes antes de declarar paridad
+
+- Capturas comparables de combate real, jefe activo, daño, poderes, pausa, selección y créditos. En especial comprobar el orden visual y anclas en dispositivos Android reales.
+- UI avanzada de opciones/controles y joystick configurable del HTML, precisión del HUD, efectos finos de entidades, transición de menús y lectura de textos.
+- Música procedimental WebAudio y SFX originales **no se han portado** aún, por decisión de priorizar visual.
+- Rendimiento/temperatura/latencia de controles en un teléfono real.
+
+**No afirmar 1:1, no mezclar a main.** Una build o una captura de CI sólo prueban que se genera o funciona bajo las condiciones del runner.

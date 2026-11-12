@@ -25,7 +25,7 @@ La música del primer bosque usa `bosque_nocturno.mp3`, recurso incluido en la r
 
 ## Nueva APK de pruebas visuales
 
-El `version_code=4` incluye reconstrucción inicial de menú, selección de personajes, nuevo HUD, iconos de controles, paisaje por capas desde Canvas y cámara vertical amortiguada.
+La actualización nativa `version_code=6` incluye reconstrucción del menú, selector, créditos originales, HUD y barra segmentada de jefe, iconos de control, paisaje Canvas, cámara horizontal/vertical amortiguada, poses originales, animaciones de enemigos, chispas, números de daño, rayos, lluvia y viñeta.
 
 Las capturas nativas de escritorio de este código se publican en el workflow [Rust / Macroquad — capturas visuales nativas](https://github.com/jonathanthxd/Retro-realm/actions/workflows/rust-screenshots.yml). Son una herramienta de comparación, **no sustituyen** la revisión en Android.
 
@@ -39,3 +39,7 @@ Las capturas nativas de escritorio de este código se publican en el workflow [R
 - Revisar los artefactos de captura/logcat del smoke test en caso de fallos.
 
 **Importante:** que Cargo cree el .apk no garantiza que se ejecute en todas las versiones Android ni que los controles sean equivalentes a los del HTML. El identificador de preview no puede leer por sí mismo `localStorage` privado de la otra aplicación.
+
+## Qué verificar visualmente en la APK v6
+
+Abrir inicio y créditos; elegir los tres héroes; recorrer ambos bosques y observar suelo, fondo, nubes, lluvia y cámara; probar salto/caída/dash/escudo; golpear y derrotar enemigos (números y partículas); revisar la barra de jefe; comprobar controles táctiles en pantalla pequeña. El audio sigue siendo provisional respecto al HTML.

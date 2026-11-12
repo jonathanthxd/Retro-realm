@@ -16,10 +16,10 @@ Reimplementar **el mismo juego** en Rust nativo, sin WebView ni motor externo, m
 | Enemigos | Variantes, estadísticas originales, segunda fase de slimes/grandes y efectos de daño | Pulir IA individual y recompensas exactas |
 | Jefe Ogro Pantanoso | Aparición y segunda fase dividida | Especiales, colisiones y partículas |
 | Rey de las Tumbas | Máquina de estados combo/salto/dash/furia | Afinar tiempos y animaciones frente al HTML |
-| Sprites, escena y decoración | PNGs originales, cielo dithered, montañas, nubes, vegetación, bruma, haces de luz y bosque por capas exportados del Canvas | Pases finales, FX por enemigo, iluminación y comparación visual |
-| Paralaje, cámara y Bosque Oscuro | Capas originales, dos bosques, lluvia y seguimiento vertical amortiguado | Ciclo visual exacto, relámpagos y salpicaduras, pruebas de encuadre |
+| Sprites, escena y decoración | PNGs originales, metadatos de ancla y poses adicionales, cielo dithered, montañas, nubes, vegetación, bruma y haces de luz | Revisión visual de anclas y animaciones específicas restantes |
+| Paralaje, cámara y Bosque Oscuro | Capas originales, lluvia/salpicaduras/relámpagos, seguimiento vertical y horizontal amortiguado | Afinar ciclo de clima y calidad en Android |
 | Audio | OGG desde MP3 propios, efectos sintetizados y mute | Comparación auditiva, volumen independiente de música/FX |
-| UI y controles táctiles | Menú principal más fiel, selección separada, retrato HUD, barras y pictogramas originales, nuevos tamaños de controles | Tipografía RetroPx, escala y posiciones configurables, joystick, créditos, pausa completa |
+| UI y controles táctiles | Menú original con créditos funcionales y botón metal, selección separada, atlas RetroPx, HUD y barra de jefe, pictogramas | Ajustes/joystick/escala/posiciones y pausa completa |
 | Perfil/ajustes y guardado | Nombre editable durante el menú por teclado PC, sin persistencia | Teclado virtual Android, mejor nivel, preferencias y controles persistentes |
 | Android APK | Compilación nativa confirmada en CI | Arranque/emulador/controles/audio/FPS en dispositivos reales |
 
@@ -49,3 +49,7 @@ Este fork no declara una licencia de distribución independiente en el upstream.
 ## Actualización visual vNext — primer pase, todavía no aprobado
 
 Esta rama ahora incluye `scenery.rs` (capas finales de cielo/montañas/nubes), `ui.rs` (composición y botones), exportador de retratos e iconos, selector separado y cámara Y amortiguada. Las pruebas Rust **no certifican** calidad visual. Las capturas del HTML y del renderer nativo se producen en `visual-reference.yml` y `rust-screenshots.yml` para inspección lado a lado. La versión APK preview permanece experimental.
+
+### Visual vNext (segundo pase)
+
+Se incluye `effects.rs` con partículas/aciertos, números de daño, anillos, rayos y señales de ataque; sprites de animaciones reales, metadatos Canvas y barra segmentada de jefe. Prueba de no interferencia con el juego nativo: `cargo test -p retro-realm --bin retro-realm`. El APK preview se mantiene separado de `main`.

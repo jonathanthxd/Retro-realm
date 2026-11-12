@@ -30,6 +30,7 @@ Para pruebas de simulación:
 
 ```powershell
 cargo test -p realm-core
+cargo test -p retro-realm --bin retro-realm
 cargo check --workspace --all-targets
 ```
 
@@ -39,7 +40,7 @@ Los controles de PC incluyen A/D o flechas para moverte, espacio para saltar, F 
 
 El workflow [Rust / Macroquad — Android APK experimental](https://github.com/jonathanthxd/Retro-realm/actions/workflows/rust-android.yml) compila APKs de prueba. Abre una ejecución exitosa y descarga el artefacto **`RetroRealm-Rust-APK-PRELIMINAR`**.
 
-La primera actualización visual cambia el menú principal, el selector, el HUD, los controles y el escenario; añade cámara vertical amortiguada. Las [capturas de referencia HTML](https://github.com/jonathanthxd/Retro-realm/actions/workflows/visual-reference.yml) pueden compararse con las [capturas nativas Rust](https://github.com/jonathanthxd/Retro-realm/actions/workflows/rust-screenshots.yml). **El aspecto todavía no ha sido validado como equivalente al original.**
+La actualización visual vNext recupera más poses originales, FX de combate, rayos, números de daño, créditos, menú de acero, barra de jefe, lluvia, animación de enemigos y cámaras amortiguadas. Las [capturas de referencia HTML](https://github.com/jonathanthxd/Retro-realm/actions/workflows/visual-reference.yml) pueden compararse con las [capturas nativas Rust](https://github.com/jonathanthxd/Retro-realm/actions/workflows/rust-screenshots.yml). **El aspecto todavía no ha sido validado como equivalente al original.**
 
 Este APK usa el identificador `com.pixelquest.game.preview` para poder instalarse junto al juego original. **No es una versión final ni ha sustituido el WebView original.** Requiere pruebas en móviles reales y comparación funcional antes de cualquier reemplazo.
 
