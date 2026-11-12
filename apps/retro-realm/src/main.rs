@@ -96,6 +96,7 @@ async fn main() {
     let mut snapshot_frames=0u32;
     let assets = assets::Assets::load().await;
     let native_ui=assets.has_native_hud();
+    let native_home=assets.has_native_menu();
     let mut music = if snapshot.is_some() {
         Music{menu:None,forest:None,night:None,boss:None,active:-1}
     } else { Music::load().await };
@@ -143,16 +144,22 @@ async fn main() {
                 if is_key_pressed(KeyCode::Key3){chosen=HeroClass::CyberRaccoon;}
             }
             for point in controls::pressed_points(virtual_width) {
+                let hit=|key:&str,legacy:Rect| {
+                    if native_home{
+                        ui_native::menu_hit(&assets,key,point*3.0,virtual_width*3.0)
+                            .unwrap_or_else(||legacy.contains(point))
+                    }else{legacy.contains(point)}
+                };
                 if home_page==ui::HomePage::Landing {
-                    if ui::home_credits_rect(virtual_width).contains(point){
+                    if hit("credits",ui::home_credits_rect(virtual_width)){
                         home_page=ui::HomePage::Credits;
                         editing_name=false;
-                    } else if ui::home_hero_rect().contains(point) {
+                    } else if hit("hero",ui::home_hero_rect()) {
                         home_page=ui::HomePage::Selection;
                         editing_name=false;
-                    } else if ui::home_name_rect(virtual_width).contains(point){
+                    } else if hit("name",ui::home_name_rect(virtual_width)){
                         editing_name=true;
-                    } else if ui::home_play_rect(virtual_width).contains(point){
+                    } else if hit("play",ui::home_play_rect(virtual_width)){
                         world=World::new(chosen);
                         effects.clear();
                         screen=Screen::Playing;
@@ -163,11 +170,11 @@ async fn main() {
                     }
                 }else if home_page==ui::HomePage::Selection{
                     for i in 0..3 {
-                        if ui::home_selection_rect(i,virtual_width).contains(point) {
+                        if hit(&format!("card{}",i),ui::home_selection_rect(i,virtual_width)) {
                             chosen=HeroClass::from_index(i);
                         }
                     }
-                    if ui::home_back_rect(virtual_width).contains(point){
+                    if hit("back",ui::home_back_rect(virtual_width)){
                         home_page=ui::HomePage::Landing;
                     }
                 }else if home_page==ui::HomePage::Credits {
@@ -263,8 +270,14 @@ async fn main() {
         set_camera(&camera);
         clear_background(BLACK);
         match screen {
-            Screen::Home => ui::draw_home(&world,virtual_width,chosen,home_page,&player_name,
-                world.player.level,&assets),
+            Screen::Home => {
+                if native_home {
+                    render::draw_menu_scene(&world,virtual_width,chosen,&assets);
+                }else{
+                    ui::draw_home(&world,virtual_width,chosen,home_page,&player_name,
+                        world.player.level,&assets);
+                }
+            },
             Screen::Playing => render::draw_game(&world,virtual_width,&assets,&player_name,&target,camera_y,camera_x,&effects,!native_ui),
             Screen::Paused => {
                 render::draw_game(&world,virtual_width,&assets,&player_name,&target,camera_y,camera_x,&effects,!native_ui);
@@ -285,6 +298,9 @@ async fn main() {
                 ..Default::default()
             },
         );
+        if native_home && screen==Screen::Home {
+            ui_native::draw_home(&assets,chosen,home_page,&player_name,world.player.level);
+        }
         if native_ui && screen!=Screen::Home {
             ui_native::draw_game(&world,&assets,&player_name);
             if screen==Screen::Paused {
