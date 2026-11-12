@@ -6,6 +6,7 @@ mod render;
 mod scenery;
 mod ui;
 mod ui_native;
+mod layout;
 mod sfx;
 
 use macroquad::audio::{load_sound, play_sound, stop_sound, PlaySoundParams, Sound};
@@ -97,6 +98,7 @@ async fn main() {
     let assets = assets::Assets::load().await;
     let native_ui=assets.has_native_hud();
     let native_home=assets.has_native_menu();
+    let control_prefs=layout::ControlPrefs::default();
     let mut music = if snapshot.is_some() {
         Music{menu:None,forest:None,night:None,boss:None,active:-1}
     } else { Music::load().await };
@@ -128,9 +130,7 @@ async fn main() {
     let mut pending = Input::default();
 
     loop {
-        let virtual_width = (180.0 * screen_width() / screen_height().max(1.0))
-            .round()
-            .clamp(320.0, 480.0);
+        let virtual_width = layout::UiLayout::current().world_width().round().max(180.0);
         if virtual_width as u32 != viewport_width {
             viewport_width = virtual_width as u32;
             target = render_target(viewport_width, 180);
@@ -161,6 +161,7 @@ async fn main() {
                         editing_name=false;
                     } else if hit("name",ui::home_name_rect(virtual_width)){
                         editing_name=true;
+                        macroquad::window::miniquad::window::show_keyboard(true);
                     } else if hit("play",ui::home_play_rect(virtual_width)){
                         world=World::new(chosen);
                         effects.clear();
@@ -168,6 +169,7 @@ async fn main() {
                         camera_y=0.0;
                         camera_x=0.0;
                         editing_name=false;
+                        macroquad::window::miniquad::window::show_keyboard(false);
                         accumulator=0.0;
                     }
                 }else if home_page==ui::HomePage::Selection{
@@ -183,8 +185,13 @@ async fn main() {
                     home_page=ui::HomePage::Landing;
                 }
             }
-            if is_key_pressed(KeyCode::Escape) && home_page!=ui::HomePage::Landing {
-                home_page=ui::HomePage::Landing;
+            if is_key_pressed(KeyCode::Escape) {
+                if editing_name {
+                    editing_name=false;
+                    macroquad::window::miniquad::window::show_keyboard(false);
+                } else if home_page!=ui::HomePage::Landing {
+                    home_page=ui::HomePage::Landing;
+                }
             }
             if editing_name {
                 while let Some(ch)=get_char_pressed(){
@@ -196,6 +203,7 @@ async fn main() {
                 if is_key_pressed(KeyCode::Backspace) {player_name.pop();}
                 if is_key_pressed(KeyCode::Enter){
                     editing_name=false;
+                    macroquad::window::miniquad::window::show_keyboard(false);
                     if player_name.trim().is_empty(){player_name="Jugador".to_string();}
                 }
             } else if home_page==ui::HomePage::Landing
@@ -208,7 +216,7 @@ async fn main() {
                 accumulator=0.0;
             }
         } else {
-            if is_key_pressed(KeyCode::Escape) || controls::pause_hit(virtual_width) {
+            if is_key_pressed(KeyCode::Escape) || controls::pause_hit(&assets,&control_prefs) {
                 screen = if screen == Screen::Playing {
                     Screen::Paused
                 } else {
@@ -257,7 +265,7 @@ async fn main() {
                     world.reset();
                     effects.clear();
                 }
-                let current = controls::game_input(virtual_width, &world);
+                let current = controls::game_input(&assets,&control_prefs,&world);
                 pending.movement = current.movement;
                 pending.jump |= current.jump;
                 pending.melee |= current.melee;
@@ -330,7 +338,8 @@ async fn main() {
             ui_native::draw_home(&assets,chosen,home_page,&player_name,world.player.level);
         }
         if native_ui && screen!=Screen::Home {
-            ui_native::draw_game(&world,&assets,&player_name,camera_x,camera_y,virtual_width);
+            ui_native::draw_game(&world,&assets,&player_name,camera_x,camera_y,virtual_width,
+                &control_prefs);
             if screen==Screen::Paused {
                 ui_native::draw_pause(&assets,audio_enabled);
             }

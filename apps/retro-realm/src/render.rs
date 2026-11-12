@@ -802,7 +802,7 @@ pub fn draw_game(w: &World, vw: f32, assets: &Assets, name:&str,
     pop_camera_state();
     vignette(vw);
     if legacy_ui {crate::ui::draw_hud(w,vw,assets,name);}
-    if w.game_over {
+    if w.game_over && legacy_ui {
         draw_rectangle(0.0, 0.0, vw, 180.0, rgba(0, 0, 0, 195));
         centered("HAS CAIDO", vw / 2.0, 80.0, 25.0, rgb(245, 89, 91));
         centered("R o tocar para reiniciar", vw / 2.0, 117.0, 13.0, WHITE);
