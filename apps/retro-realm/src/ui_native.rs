@@ -202,6 +202,11 @@ pub fn draw_home(
     }
     pop_camera_state();
 }
+pub fn pause_hit(assets:&Assets,key:&str,point:Vec2,ui_width:f32)->Option<bool>{
+    let r=assets.dom_pause_rect(key)?;
+    let x=r.x+(ui_width-960.0)*0.5;
+    Some(Rect::new(x,r.y,r.w,r.h).contains(point))
+}
 pub fn menu_hit(assets:&Assets,key:&str,point:Vec2,ui_width:f32)->Option<bool>{
     let r=assets.dom_menu_rect(key)?;
     let x=r.x+(ui_width-960.0)*0.5;
@@ -218,6 +223,16 @@ pub fn draw_pause(assets:&Assets,audio_enabled:bool){
     ui_camera.zoom.y=-ui_camera.zoom.y;
     set_camera(&ui_camera);
     draw_rectangle(0.0,0.0,vw,540.0,rgba(0,0,0,204));
+    // Panel exacto del HTML (Gradientes, serif, bisel y controles CSS).
+    if let (Some(panel),Some(frame))=(assets.dom_pause_panel(),assets.dom_pause_rect("frame")) {
+        draw_texture_ex(panel,frame.x+(vw-960.0)*0.5,frame.y,WHITE,
+            DrawTextureParams{
+                dest_size:Some(vec2(frame.w,frame.h)),
+                ..Default::default()
+            });
+        pop_camera_state();
+        return;
+    }
     let x=vw*0.5-210.0;
     let y=60.0;
     let w=420.0;
