@@ -389,10 +389,14 @@ fn props(w: &World, vw: f32, cam: f32, assets: &Assets) {
         draw_rectangle(px-1.0,y-34.0+f_y,3.0,4.0,rgb(255,176,48));
         draw_rectangle(px,y-31.0+f_y,1.0,3.0,rgb(255,244,176));
         // One ember per 14 ticks, capped and deterministic.
-        if (w.tick+(x as u64)%14)%14==0 {
-            let rise=((w.tick/14+(x as u64)%7)%5) as f32;
-            draw_rectangle(px-1.0+((w.tick/7)%3) as f32,
-                y-36.0-rise,1.0,1.0,rgba(255,180,48,205));
+        for i in 0..3u64 {
+            let age=(w.tick+i*5+(x as u64)%7)%25;
+            if age>17 {continue;}
+            let rise=age as f32*0.55;
+            let drift=(w.tick as f32*0.10+i as f32*2.4+x*0.03).sin()*3.0;
+            let opacity=((17-age) as f32/17.0*195.0) as u8;
+            draw_rectangle((px+drift).round(),(y-35.0-rise).round(),
+                1.0,1.0,rgba(255,181,60,opacity));
         }
     }
     for chest in &w.chests[mi] {
@@ -426,26 +430,100 @@ fn props(w: &World, vw: f32, cam: f32, assets: &Assets) {
     }
 }
 fn portal(w: &World, x: f32, cam: f32, open: bool) {
-    let sx = x - cam;
-    let y = w.floor(x);
-    let stone = rgb(148, 145, 126);
-    draw_rectangle(sx - 17.0, y - 57.0, 7.0, 57.0, stone);
-    draw_rectangle(sx + 10.0, y - 57.0, 7.0, 57.0, stone);
-    draw_circle_lines(sx, y - 52.0, 14.0, 7.0, stone);
-    draw_rectangle(
-        sx - 9.0,
-        y - 50.0,
-        18.0,
-        50.0,
-        if open {
-            rgb(35, 132, 146)
-        } else {
-            rgb(8, 11, 19)
-        },
-    );
-    if open {
-        draw_circle(sx, y - 25.0, 6.0, rgb(74, 240, 216));
+    // Geometry taken from zPortal() in Retro Realm.html. The previous
+    // rectangle-and-circle placeholder looked noticeably different.
+    let sx=(x-cam).round();
+    let y=w.floor(x);
+    let t=w.tick as f32;
+    // Planted stone base, grass cap and ground sigil.
+    draw_rectangle(sx-24.0,y-3.0,48.0,3.0,rgb(95,125,28));
+    draw_rectangle(sx-24.0,y-3.0,48.0,1.0,rgb(202,219,60));
+    for i in 0..10 {
+        draw_rectangle(sx-24.0+i as f32*5.0,y-5.0+(i&1) as f32,
+            3.0,3.0,rgb(138,166,38));
     }
+    draw_rectangle(sx-20.0,y,40.0,2.0,rgb(58,42,72));
+    for (dx,dy,size,phase) in [(-30.0,6.0,3.0,0.0),
+        (-26.0,13.0,2.0,1.0),(27.0,8.0,3.0,2.0),
+        (31.0,15.0,2.0,3.0),(0.0,22.0,3.0,4.0)]
+    {
+        let bob=(t*0.05+phase).sin().round()*2.0;
+        draw_rectangle(sx+dx,y+dy+bob,size+1.0,size,rgb(106,58,74));
+        draw_rectangle(sx+dx,y+dy+bob,size,1.0,rgb(138,90,106));
+    }
+    draw_circle(sx,y+9.0,6.0,rgb(12,10,16));
+    draw_circle(sx,y+9.0,5.0,rgb(74,106,112));
+    draw_triangle(vec2(sx,y+4.0),vec2(sx+3.0,y+9.0),vec2(sx,y+14.0),
+        if open{rgb(74,240,216)}else{rgb(42,90,88)});
+    draw_triangle(vec2(sx,y+4.0),vec2(sx,y+14.0),vec2(sx-3.0,y+9.0),
+        if open{rgb(74,240,216)}else{rgb(42,90,88)});
+    // Portal cavity with clipped-looking stepped arch.
+    draw_rectangle(sx-9.0,y-52.0,18.0,49.0,rgb(7,10,18));
+    draw_circle(sx,y-52.0,9.0,rgb(7,10,18));
+    if open {
+        for i in (0..9).rev(){
+            let inner=9.0-i as f32;
+            let color=if i<3{rgb(226,255,247)}
+                else if i<6{rgb(74,240,216)}else{rgb(15,72,87)};
+            draw_rectangle(sx-inner,y-51.0,inner*2.0,48.0,color);
+        }
+        // Tiny spiral flecks like the original 46 glowing particles.
+        for i in 0..46{
+            let a=i as f32*0.42+t*0.07;
+            let radius=i as f32*0.20;
+            let alpha=((0.35+0.50*(1.0-i as f32/46.0))*255.0) as u8;
+            draw_rectangle((sx+a.cos()*radius).round(),
+                (y-30.0+a.sin()*radius*2.1).round(),2.0,2.0,
+                rgba(232,255,250,alpha));
+        }
+    }else{
+        for i in 0..24{
+            let a=i as f32*0.45+t*0.01;
+            let radius=i as f32*0.28;
+            draw_rectangle((sx+a.cos()*radius).round(),
+                (y-30.0+a.sin()*radius*2.0).round(),1.0,1.0,
+                rgba(120,160,200,46));
+        }
+    }
+    // Cut-stone pillars, joints and top arch, all in original palette.
+    for (side,shadow,highlight) in [
+        (-1.0,-12.0,-18.0),(1.0,16.0,10.0)
+    ] {
+        let main_x=if side<0.0{sx-18.0}else{sx+10.0};
+        draw_rectangle(main_x,y-58.0,8.0,56.0,rgb(138,132,112));
+        draw_rectangle(main_x,y-58.0,3.0,56.0,rgb(168,162,138));
+        draw_rectangle(sx+shadow,y-58.0,2.0,56.0,rgb(90,86,70));
+        draw_rectangle(sx+highlight-1.0,y-60.0,10.0,4.0,rgb(168,162,138));
+        for i in 0..4 {
+            draw_rectangle(if side<0.0{sx-16.0}else{sx+12.0},
+                y-46.0+i as f32*10.0,4.0,2.0,rgb(74,70,56));
+        }
+    }
+    // Three concentric strokes approximate the original semicircle exactly.
+    for (radius,width,color,offset) in [
+        (14.0,7.0,rgb(138,132,112),0.0),
+        (14.0,2.0,rgb(168,162,138),-3.0),
+        (14.0,1.5,rgb(90,86,70),3.0)
+    ] {
+        let cy=y-52.0+offset;
+        let mut prev=vec2(sx-radius,cy);
+        for i in 1..=22 {
+            let a=std::f32::consts::PI+(i as f32/22.0)*std::f32::consts::PI;
+            let next=vec2(sx+a.cos()*radius,cy+a.sin()*radius);
+            draw_line(prev.x,prev.y,next.x,next.y,width,color);
+            prev=next;
+        }
+    }
+    // Floating cyan gem atop the arch.
+    let gem=if open{rgb(74,240,216)}else{rgb(46,106,102)};
+    draw_triangle(vec2(sx,y-75.0),vec2(sx+4.0,y-70.0),vec2(sx,y-64.0),
+        rgb(12,10,16));
+    draw_triangle(vec2(sx,y-75.0),vec2(sx,y-64.0),vec2(sx-4.0,y-70.0),
+        rgb(12,10,16));
+    draw_triangle(vec2(sx,y-74.0),vec2(sx+3.0,y-70.0),vec2(sx,y-65.0),gem);
+    draw_triangle(vec2(sx,y-74.0),vec2(sx,y-65.0),vec2(sx-3.0,y-70.0),gem);
+    draw_rectangle(sx-1.0,y-72.0,2.0,3.0,
+        if open{rgb(232,255,250)}else{rgb(74,138,132)});
 }
 fn enemy(e: &realm_core::Enemy, cam: f32, t: u64, player_x:f32, assets: &Assets) {
     let x = (e.x - cam).round();
