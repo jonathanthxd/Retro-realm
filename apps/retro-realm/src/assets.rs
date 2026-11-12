@@ -56,6 +56,8 @@ pub struct Assets {
     dom_selection:[Option<Texture2D>;3],
     dom_credits:Option<Texture2D>,
     dom_menu_layout:HashMap<String,Rect>,
+    dom_pause_panel:Option<Texture2D>,
+    dom_pause_layout:HashMap<String,Rect>,
 }
 
 async fn dom_texture(name:String)->Option<Texture2D>{
@@ -124,6 +126,8 @@ impl Assets {
             dom_selection:std::array::from_fn(|_|None),
             dom_credits:None,
             dom_menu_layout:HashMap::new(),
+            dom_pause_panel:None,
+            dom_pause_layout:HashMap::new(),
         };
         // Metadatos de anclaje de los Canvas originales (ax/ay).
         if let Ok(csv)=macroquad::file::load_string("sprites/sprite_meta.csv").await {
@@ -233,6 +237,10 @@ impl Assets {
             result.dom_selection[cl]=dom_texture(format!("ui_select_{}",cl)).await;
         }
         result.dom_credits=dom_texture("ui_credits".to_string()).await;
+        result.dom_pause_panel=dom_texture("ui_pause_panel".to_string()).await;
+        if let Ok(csv)=macroquad::file::load_string("sprites/ui_pause_layout.csv").await {
+            result.dom_pause_layout=parse_css_rects(&csv);
+        }
         for cl in 0..3 {
             result.portraits[cl] = texture(format!("ui_portrait_{}",cl)).await;
             for id in ["s0","s1","s2","s3","bj","bm","bl","br"] {
@@ -300,6 +308,12 @@ impl Assets {
             }
         }
         result
+    }
+    pub fn dom_pause_panel(&self)->Option<&Texture2D>{
+        self.dom_pause_panel.as_ref()
+    }
+    pub fn dom_pause_rect(&self,key:&str)->Option<Rect>{
+        self.dom_pause_layout.get(key).copied()
     }
     pub fn has_native_menu(&self)->bool{
         self.dom_home[0].is_some()&&self.dom_menu_layout.contains_key("play")
