@@ -54,9 +54,14 @@ try {
     };
     // 3 personajes, poses y variantes de habilidad.
     for (let cl = 0; cl < 3; cl++) {
-      for (let phase = 0; phase < 9; phase++) {
+      // HF(cl, fase, idleFrame, arm, slash) — conservar poses reales.
+      for (let phase of [0,1,2,3,4,5,6,7,8,9,11]) {
         add('hero_' + cl + '_' + phase, HF(cl, phase, 0, 0, 0));
       }
+      for (let idle = 0; idle < 4; idle++) {
+        add('hero_idle_' + cl + '_' + idle, HF(cl, 0, idle, 0, 0));
+      }
+      add('hero_cast_' + cl, HF(cl, 0, 0, 1, 0));
       for (let slash = 0; slash < 3; slash++) {
         add('hero_attack_' + cl + '_' + slash, HF(cl, 9, 0, 2, slash));
       }
@@ -209,6 +214,10 @@ try {
     index[name] = { width, height, ax, ay };
   }
   await writeFile(path.join(dest, 'index.json'), JSON.stringify(index, null, 2) + '\n');
+  // El ancla Canvas (ax, ay) debe mantenerse. El alto del PNG no equivale
+  // al punto de apoyo de todos los jefes ni personajes.
+  await writeFile(path.join(dest,'sprite_meta.csv'),images.map(({name,ax,ay})=>
+    [name,ax,ay].join(',')).join('\n')+'\n');
   await writeFile(path.join(dest,'decor_layout.csv'),payload.decorLayout.join('\n')+'\n');
   await writeFile(path.join(dest,'scene_cloud_layout.csv'),payload.cloudLayout.join('\n')+'\n');
   console.log('Exportados ' + images.length + ' sprites originales a ' + dest);
