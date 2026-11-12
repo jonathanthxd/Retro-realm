@@ -17,6 +17,9 @@ on:
       - 'apps/retro-realm/src/effects.rs'
       - 'apps/retro-realm/src/assets.rs'
       - 'apps/retro-realm/src/main.rs'
+      - 'apps/retro-realm/src/layout.rs'
+      - 'apps/retro-realm/src/controls.rs'
+      - 'apps/retro-realm/src/settings.rs'
       - 'apps/retro-realm/assets/sprites/terrain_*'
       - 'apps/retro-realm/assets/sprites/dark_*'
       - 'apps/retro-realm/assets/sprites/hero_*'
@@ -48,6 +51,18 @@ jobs:
           for scene in menu selection credits night dark pause; do
             echo "Capturando $scene"
             RETRO_REALM_SNAPSHOT="$scene" xvfb-run -a -s "-screen 0 960x540x24" timeout 80s ./target/debug/retro-realm
+          done
+          # Regression screenshots at both narrow and ultrawide aspect ratios.
+          for spec in "1024x768 tablet" "1200x540 ultrawide"; do
+            set -- $spec
+            res="$1"
+            label="$2"
+            for scene in menu night pause; do
+              echo "Capturando $scene ($res)"
+              RETRO_REALM_TEST_WINDOW="$res" RETRO_REALM_SNAPSHOT="$scene" \
+                xvfb-run -a -s "-screen 0 2560x1600x24" timeout 80s ./target/debug/retro-realm
+              mv "native-captures/$scene.png" "native-captures/$label-$scene.png"
+            done
           done
       - uses: actions/upload-artifact@v4
         with:

@@ -25,10 +25,20 @@ enum Screen {
 }
 
 fn config() -> Conf {
+    // Desktop CI validates tablet and ultrawide without affecting APK.
+    let (width,height)=std::env::var("RETRO_REALM_TEST_WINDOW").ok()
+        .and_then(|s|{
+            let (a,b)=s.split_once('x')?;
+            let w=a.parse::<i32>().ok()?;
+            let h=b.parse::<i32>().ok()?;
+            if (500..=3000).contains(&w)&&(300..=1600).contains(&h){
+                Some((w,h))
+            }else{None}
+        }).unwrap_or((960,540));
     Conf {
         window_title: "Retro Realm".to_owned(),
-        window_width: 960,
-        window_height: 540,
+        window_width: width,
+        window_height: height,
         high_dpi: true,
         window_resizable: true,
         ..Default::default()
