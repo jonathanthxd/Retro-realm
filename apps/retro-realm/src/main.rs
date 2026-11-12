@@ -9,7 +9,7 @@ mod sfx;
 
 use macroquad::audio::{load_sound, play_sound, stop_sound, PlaySoundParams, Sound};
 use macroquad::prelude::*;
-use realm_core::{HeroClass, Input, MapId, World, TICK_RATE};
+use realm_core::{HeroClass, Input, MapId, World, TICK_RATE, WORLD_WIDTH};
 use sfx::{Cue,Sfx};
 use effects::{FrameSnapshot,VisualFx};
 
@@ -119,6 +119,7 @@ async fn main() {
     target.texture.set_filter(FilterMode::Nearest);
     let mut accumulator = 0.0f32;
     let mut camera_y = 0.0f32;
+    let mut camera_x = 0.0f32;
     let mut pending = Input::default();
 
     loop {
@@ -151,6 +152,8 @@ async fn main() {
                         effects.clear();
                         screen=Screen::Playing;
                         camera_y=0.0;
+                camera_x=0.0;
+                        camera_x=0.0;
                         editing_name=false;
                         accumulator=0.0;
                     }
@@ -183,6 +186,7 @@ async fn main() {
                 effects.clear();
                 screen=Screen::Playing;
                 camera_y=0.0;
+                camera_x=0.0;
                 accumulator=0.0;
             }
         } else {
@@ -238,6 +242,10 @@ async fn main() {
             let want=(world.player.y-120.0).clamp(-46.0,18.0);
             let smooth=1.0-0.91f32.powf((get_frame_time()*60.0).max(0.0));
             camera_y+=(want-camera_y)*smooth;
+            let want_x=(world.player.x-virtual_width/2.0+world.player.facing*24.0)
+                .clamp(0.0,WORLD_WIDTH-virtual_width);
+            let smooth_x=1.0-0.9f32.powf((get_frame_time()*60.0).max(0.0));
+            camera_x+=(want_x-camera_x)*smooth_x;
         }
         music.sync(screen, &world,audio_enabled);
 
@@ -248,9 +256,9 @@ async fn main() {
         match screen {
             Screen::Home => ui::draw_home(&world,virtual_width,chosen,home_page,&player_name,
                 world.player.level,&assets),
-            Screen::Playing => render::draw_game(&world,virtual_width,&assets,&player_name,&target,camera_y,&effects),
+            Screen::Playing => render::draw_game(&world,virtual_width,&assets,&player_name,&target,camera_y,camera_x,&effects),
             Screen::Paused => {
-                render::draw_game(&world,virtual_width,&assets,&player_name,&target,camera_y,&effects);
+                render::draw_game(&world,virtual_width,&assets,&player_name,&target,camera_y,camera_x,&effects);
                 ui::draw_pause(virtual_width,audio_enabled);
             }
         }

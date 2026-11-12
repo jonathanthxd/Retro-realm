@@ -322,14 +322,47 @@ fn decorations(w:&World,vw:f32,cam:f32,assets:&Assets){
         }
     }
 }
-fn rain(w:&World,vw:f32) {
-    // Lluvia ligera del Bosque Oscuro, 100 gotas sin heap allocations/tick.
-    if w.map != MapId::DarkForest {return;}
-    for i in 0..100 {
-        let seed=(i*9973+37) as f32;
-        let x=(seed*1.13-w.tick as f32*1.1).rem_euclid(vw+20.0);
-        let y=(seed*0.72+w.tick as f32*(4.0+(i%3) as f32)).rem_euclid(230.0)-35.0;
-        draw_line(x,y,x-2.0,y+5.0,0.7,rgba(180,203,245,105));
+fn rain(w:&World,vw:f32,cam:f32,camera_y:f32) {
+    if w.map!=MapId::DarkForest{return;}
+    // zRain() original: 130 gotas, trazos en dos segmentos, salpicaduras
+    // y relámpagos esporádicos. Variación determinista sin tocar realm-core.
+    draw_rectangle(0.0,camera_y-8.0,vw,188.0,rgba(0,6,20,16));
+    for i in 0..130 {
+        let hash=(i*9973+37) as f32;
+        let speed=5.0+(i*37%35) as f32/10.0;
+        let length=3.0+(i%4) as f32;
+        let x=(hash*1.13-w.tick as f32*1.1).rem_euclid(vw+30.0)-8.0;
+        let y=(hash*0.72+w.tick as f32*speed).rem_euclid(240.0)-55.0;
+        let alpha=if length>4.0{128}else{82};
+        draw_rectangle(x.round(),y.round(),1.0,2.0,
+            rgba(165,190,235,alpha));
+        draw_rectangle(x.round()-1.0,y.round()+2.0,1.0,length-1.0,
+            rgba(165,190,235,alpha));
+        // zRain crea RS al tocar el suelo. No se guarda estado mutable:
+        // la proximidad suelo/tiempo genera la misma lectura de salpicadura.
+        let ground=w.floor(cam+x);
+        if y>=ground-6.0 && y<=ground+2.0{
+            let width=2.0+((i as f32+w.tick as f32)*0.24).sin().abs()*3.0;
+            draw_rectangle(x-width/2.0,ground-1.0,width,1.0,
+                rgba(180,205,245,137));
+        }
+    }
+    // Un destello poco frecuente con la silueta ramificada de zRain/ZLT.
+    let phase=w.tick%1667;
+    if phase<16 {
+        let a=((16-phase) as f32/16.0).max(0.0);
+        draw_rectangle(0.0,camera_y-8.0,vw,188.0,
+            rgba(210,225,255,(a*51.0) as u8));
+        if phase<5 {
+            let mut x=60.0+(cam*7.0).rem_euclid(200.0);
+            let mut y=camera_y-8.0;
+            for k in 0..12{
+                let nx=x+(((k*43+7) as f32*1.13).sin()*8.0);
+                let ny=y+12.0;
+                draw_line(x,y,nx,ny,1.5,rgba(235,242,255,220));
+                x=nx;y=ny;
+            }
+        }
     }
 }
 fn props(w: &World, vw: f32, cam: f32, assets: &Assets) {
@@ -605,7 +638,8 @@ fn vignette(vw:f32) {
     }
 }
 pub fn draw_game(w: &World, vw: f32, assets: &Assets, name:&str,
-    target:&RenderTarget, camera_y:f32,fx:&crate::effects::VisualFx) {
+    target:&RenderTarget, camera_y:f32,camera_x:f32,
+    fx:&crate::effects::VisualFx) {
     // El mundo se mueve verticalmente, pero el HUD y los controles permanecen
     // fijos en coordenadas de la pantalla; el Canvas HTML hace lo mismo.
     push_camera_state();
@@ -614,12 +648,11 @@ pub fn draw_game(w: &World, vw: f32, assets: &Assets, name:&str,
     set_camera(&wc);
     draw_rectangle(0.0,-60.0,vw,300.0,
         if w.map==MapId::DarkForest{rgb(7,11,24)}else{rgb(5,11,30)});
-    let cam = (w.player.x - vw / 2.0 + w.player.facing * 24.0).clamp(0.0, WORLD_WIDTH - vw);
+    let cam=camera_x.clamp(0.0,WORLD_WIDTH-vw);
     background(w, vw, cam, assets);
     decorations(w, vw, cam, assets);
     terrain(w, vw, cam, assets);
     props(w, vw, cam, assets);
-    rain(w,vw);
     for pickup in &w.pickups {
         let x = pickup.x - cam;
         let color = match pickup.kind {
@@ -677,6 +710,7 @@ pub fn draw_game(w: &World, vw: f32, assets: &Assets, name:&str,
         }
     }
     fx.draw_world(cam,assets,vw);
+    rain(w,vw,cam,camera_y);
     pop_camera_state();
     vignette(vw);
     crate::ui::draw_hud(w,vw,assets,name);
