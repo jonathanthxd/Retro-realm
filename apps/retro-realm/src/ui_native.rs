@@ -30,12 +30,12 @@ fn glyph_width(text:&str,size:f32)->f32 {
 fn native_text(assets:&Assets,txt:&str,x:f32,center_y:f32,size:f32,col:Color,centered:bool){
     let Some(atlas)=assets.font_atlas() else {
         let w=measure_text(txt,None,size as u16,1.0).width;
-        draw_text(txt,if centered{x-w/2.0}else{x},center_y+size*.4,size,col);
+        draw_text(txt,if centered{x-w/2.0}else{x},center_y+size*0.4,size,col);
         return;
     };
     let scale=size/16.0;
     let step=size*10.2/16.0;
-    let mut left=if centered{x-glyph_width(txt,size)*.5}else{x};
+    let mut left=if centered{x-glyph_width(txt,size)*0.5}else{x};
     for ch in txt.chars() {
         let idx=source_glyph(ch);
         draw_texture_ex(atlas,left,center_y-10.0*scale,col,DrawTextureParams{
@@ -105,7 +105,7 @@ fn place(rect:Rect,id:&str,vw:f32)->Rect{
     // HTML #ctl tiene botones anclados a left / right / center.
     let x=match id {
         "bl"|"br"=>rect.x,
-        "ap"=>rect.x+(vw-960.0)*.5,
+        "ap"=>rect.x+(vw-960.0)*0.5,
         _=>rect.x+vw-960.0,
     };
     Rect::new(x,rect.y,rect.w,rect.h)
@@ -168,7 +168,7 @@ pub fn draw_pause(assets:&Assets,audio_enabled:bool){
     let vw=css_width();
     set_camera(&Camera2D::from_display_rect(Rect::new(0.0,0.0,vw,540.0)));
     draw_rectangle(0.0,0.0,vw,540.0,rgba(0,0,0,204));
-    let x=vw*.5-210.0;
+    let x=vw*0.5-210.0;
     let y=60.0;
     let w=420.0;
     let h=425.0;
@@ -177,7 +177,7 @@ pub fn draw_pause(assets:&Assets,audio_enabled:bool){
     draw_rectangle(x+4.0,y+4.0,w-8.0,h-8.0,rgb(38,36,44));
     draw_rectangle(x+6.0,y+6.0,w-12.0,87.0,rgb(74,70,80));
     draw_rectangle(x+6.0,y+90.0,w-12.0,h-96.0,rgb(39,37,46));
-    native_text(assets,"PAUSA",vw*.5,y+35.0,22.0,rgb(245,208,112),true);
+    native_text(assets,"PAUSA",vw*0.5,y+35.0,22.0,rgb(245,208,112),true);
     native_text(assets,"Música",x+27.0,y+82.0,13.0,rgb(246,231,191),false);
     native_text(assets,"Sonidos",x+27.0,y+132.0,13.0,rgb(246,231,191),false);
     for (row,val) in [(0,if audio_enabled{0.7}else{0.0}),
@@ -190,10 +190,10 @@ pub fn draw_pause(assets:&Assets,audio_enabled:bool){
     }
     native_text(assets,"Estilo de música",x+27.0,y+180.0,12.0,rgb(238,227,196),false);
     native_text(assets,"Épica    Folk    Nocturna",
-        vw*.5+62.0,y+180.0,10.4,rgb(246,216,140),true);
+        vw*0.5+62.0,y+180.0,10.4,rgb(246,216,140),true);
     native_text(assets,"Controles",x+27.0,y+228.0,12.0,rgb(238,227,196),false);
     native_text(assets,"Botones    Joystick",
-        vw*.5+75.0,y+228.0,11.0,rgb(246,216,140),true);
+        vw*0.5+75.0,y+228.0,11.0,rgb(246,216,140),true);
     for (i,label) in ["Mover controles","Restablecer"].iter().enumerate() {
         let bx=x+12.0+i as f32*204.0;
         draw_rectangle(bx,y+259.0,194.0,35.0,rgb(52,48,60));
@@ -202,7 +202,7 @@ pub fn draw_pause(assets:&Assets,audio_enabled:bool){
     }
     draw_rectangle(x+13.0,y+309.0,w-26.0,31.0,rgb(52,48,60));
     draw_rectangle_lines(x+13.0,y+309.0,w-26.0,31.0,2.0,rgb(139,133,152));
-    native_text(assets,"Cambiar personaje",vw*.5,y+325.0,12.0,rgb(244,225,184),true);
+    native_text(assets,"Cambiar personaje",vw*0.5,y+325.0,12.0,rgb(244,225,184),true);
     for (i,label) in ["Menú principal","Continuar"].iter().enumerate(){
         let bx=x+13.0+i as f32*199.0;
         draw_rectangle(bx,y+355.0,193.0,39.0,
