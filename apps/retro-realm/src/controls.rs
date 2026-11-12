@@ -1,117 +1,101 @@
-use crate::render::{self, ButtonId};
+//! Single source of touch geometry: matches the responsive renderer.
+use crate::assets::Assets;
+use crate::layout::{ControlPrefs,UiLayout};
+use crate::render::ButtonId;
+use crate::ui_native;
 use macroquad::prelude::*;
-use realm_core::{Input, World};
+use realm_core::{Input,World};
 
-fn virtual_point(point: Vec2, virtual_width: f32) -> Vec2 {
-    vec2(
-        point.x / screen_width().max(1.0) * virtual_width,
-        point.y / screen_height().max(1.0) * 180.0,
-    )
-}
-pub fn pressed_points(vw: f32) -> Vec<Vec2> {
-    let mut result = Vec::new();
-    if is_mouse_button_pressed(MouseButton::Left) {
-        let (x, y) = mouse_position();
-        result.push(virtual_point(vec2(x, y), vw));
+const IDS:[(ButtonId,&str);10]=[
+    (ButtonId::Left,"bl"),(ButtonId::Right,"br"),
+    (ButtonId::Jump,"bj"),(ButtonId::Melee,"bm"),
+    (ButtonId::Shield,"bs"),(ButtonId::Skill0,"s0"),
+    (ButtonId::Skill1,"s1"),(ButtonId::Skill2,"s2"),
+    (ButtonId::Dash,"s3"),(ButtonId::Interact,"ap"),
+];
+
+/// All incoming points use the same 540-high layout as UI painting.
+pub fn ui_pressed_points()->Vec<Vec2>{
+    let layout=UiLayout::current();
+    let mut points=Vec::new();
+    if is_mouse_button_pressed(MouseButton::Left){
+        let (x,y)=mouse_position();
+        points.push(layout.from_screen(vec2(x,y)));
     }
-    for t in touches() {
-        if t.phase == TouchPhase::Started {
-            result.push(virtual_point(t.position, vw));
+    for touch in touches() {
+        if touch.phase==TouchPhase::Started {
+            points.push(layout.from_screen(touch.position));
         }
     }
-    result
+    points
 }
-fn active_buttons(vw: f32) -> Vec<ButtonId> {
-    let mut result = Vec::new();
-    if is_mouse_button_down(MouseButton::Left) {
-        let (x, y) = mouse_position();
-        let p = virtual_point(vec2(x, y), vw);
-        for b in render::buttons(vw) {
-            if (p - b.center).length_squared() <= b.radius * b.radius {
-                result.push(b.id);
-            }
+pub fn pressed_points(_virtual_width:f32)->Vec<Vec2>{
+    ui_pressed_points().into_iter().map(|p|p/3.0).collect()
+}
+fn active_points()->Vec<Vec2>{
+    let layout=UiLayout::current();
+    let mut points=Vec::new();
+    if is_mouse_button_down(MouseButton::Left){
+        let (x,y)=mouse_position();
+        points.push(layout.from_screen(vec2(x,y)));
+    }
+    for touch in touches(){
+        if touch.phase!=TouchPhase::Ended && touch.phase!=TouchPhase::Cancelled {
+            points.push(layout.from_screen(touch.position));
         }
     }
-    for t in touches() {
-        if t.phase == TouchPhase::Ended || t.phase == TouchPhase::Cancelled {
-            continue;
-        }
-        let p = virtual_point(t.position, vw);
-        for b in render::buttons(vw) {
-            if (p - b.center).length_squared() <= b.radius * b.radius {
-                result.push(b.id);
-            }
-        }
-    }
-    result
+    points
 }
-pub fn pause_hit(vw: f32) -> bool {
-    pressed_points(vw)
-        .iter()
-        .any(|p| p.x > vw - 26.0 && p.y < 28.0)
-}
-pub fn sound_hit(vw: f32) -> bool {
-    pressed_points(vw).iter().any(|p| p.x>vw/2.0-65.0 && p.x<vw/2.0+65.0
-        && p.y>134.0 && p.y<158.0)
-}
-pub fn menu_hit(vw: f32) -> bool {
-    pressed_points(vw)
-        .iter()
-        .any(|p| p.x > vw / 2.0 - 65.0 && p.x < vw / 2.0 + 65.0 && p.y > 105.0 && p.y < 128.0)
-}
-pub fn restart_hit(vw: f32) -> bool {
-    pressed_points(vw)
-        .iter()
-        .any(|p| p.x > vw / 2.0 - 70.0 && p.x < vw / 2.0 + 70.0 && p.y > 95.0 && p.y < 145.0)
-}
-pub fn game_input(vw: f32, w: &World) -> Input {
-    let buttons = active_buttons(vw);
-    let just = pressed_points(vw);
-    let pressed = |id| buttons.contains(&id);
-    let started = |id: ButtonId| {
-        just.iter().any(|p| {
-            render::buttons(vw)
-                .iter()
-                .any(|b| b.id == id && (b.center - *p).length_squared() <= b.radius * b.radius)
+fn active_buttons(assets:&Assets,prefs:&ControlPrefs)->Vec<ButtonId>{
+    active_points().into_iter().flat_map(|point|{
+        IDS.iter().filter_map(move |(id,key)|{
+            if prefs.joystick&&(*key=="bl"||*key=="br"){return None;}
+            ui_native::control_hit(assets,key,point,prefs).then_some(*id)
         })
+    }).collect()
+}
+pub fn pause_hit(assets:&Assets,prefs:&ControlPrefs)->bool{
+    ui_pressed_points().into_iter().any(|point|
+        ui_native::control_hit(assets,"pause",point,prefs))
+}
+pub fn sound_hit(vw:f32)->bool {
+    pressed_points(vw).iter().any(|p|p.x>vw/2.0-65.0&&p.x<vw/2.0+65.0
+        &&p.y>134.0&&p.y<158.0)
+}
+pub fn menu_hit(vw:f32)->bool {
+    pressed_points(vw).iter().any(|p|p.x>vw/2.0-65.0&&p.x<vw/2.0+65.0
+        &&p.y>105.0&&p.y<128.0)
+}
+pub fn restart_hit(_vw:f32)->bool {
+    ui_pressed_points().iter().any(|p|ui_native::defeat_hit(*p))
+}
+pub fn game_input(assets:&Assets,prefs:&ControlPrefs,w:&World)->Input{
+    let buttons=active_buttons(assets,prefs);
+    let just=ui_pressed_points();
+    let pressed=|id|buttons.contains(&id);
+    let started=|id:ButtonId|->bool{
+        let Some((_,key))=IDS.iter().find(|(candidate,_)|*candidate==id) else{return false;};
+        just.iter().any(|p|ui_native::control_hit(assets,key,*p,prefs))
     };
-    let movement =
-        (if is_key_down(KeyCode::D) || is_key_down(KeyCode::Right) || pressed(ButtonId::Right) {
-            1.0
-        } else {
-            0.0
-        }) - (if is_key_down(KeyCode::A) || is_key_down(KeyCode::Left) || pressed(ButtonId::Left) {
-            1.0
-        } else {
-            0.0
-        });
+    let movement=
+        (if is_key_down(KeyCode::D)||is_key_down(KeyCode::Right)||pressed(ButtonId::Right){1.0}else{0.0})
+        -(if is_key_down(KeyCode::A)||is_key_down(KeyCode::Left)||pressed(ButtonId::Left){1.0}else{0.0});
     Input {
         movement,
-        jump: is_key_pressed(KeyCode::Space)
-            || is_key_pressed(KeyCode::W)
-            || is_key_pressed(KeyCode::Up)
-            || started(ButtonId::Jump),
-        melee: is_key_pressed(KeyCode::F) || is_key_pressed(KeyCode::X) || started(ButtonId::Melee),
-        skills: [
-            is_key_pressed(KeyCode::Key1)
-                || is_key_pressed(KeyCode::J)
-                || started(ButtonId::Skill0),
-            is_key_pressed(KeyCode::Key2)
-                || is_key_pressed(KeyCode::K)
-                || started(ButtonId::Skill1),
-            is_key_pressed(KeyCode::Key3)
-                || is_key_pressed(KeyCode::L)
-                || started(ButtonId::Skill2),
+        jump:is_key_pressed(KeyCode::Space)||is_key_pressed(KeyCode::W)
+            ||is_key_pressed(KeyCode::Up)||started(ButtonId::Jump),
+        melee:is_key_pressed(KeyCode::F)||is_key_pressed(KeyCode::X)
+            ||started(ButtonId::Melee),
+        skills:[
+            is_key_pressed(KeyCode::Key1)||is_key_pressed(KeyCode::J)||started(ButtonId::Skill0),
+            is_key_pressed(KeyCode::Key2)||is_key_pressed(KeyCode::K)||started(ButtonId::Skill1),
+            is_key_pressed(KeyCode::Key3)||is_key_pressed(KeyCode::L)||started(ButtonId::Skill2),
         ],
-        dash: is_key_pressed(KeyCode::LeftShift)
-            || is_key_pressed(KeyCode::C)
-            || is_key_pressed(KeyCode::Key4)
-            || started(ButtonId::Dash),
-        shield: is_key_pressed(KeyCode::Q)
-            || is_key_pressed(KeyCode::E)
-            || started(ButtonId::Shield),
-        interact: is_key_pressed(KeyCode::Enter)
-            || started(ButtonId::Interact)
-            || (w.player_near_portal() && is_key_pressed(KeyCode::Up)),
+        dash:is_key_pressed(KeyCode::LeftShift)||is_key_pressed(KeyCode::C)
+            ||is_key_pressed(KeyCode::Key4)||started(ButtonId::Dash),
+        shield:is_key_pressed(KeyCode::Q)||is_key_pressed(KeyCode::E)
+            ||started(ButtonId::Shield),
+        interact:is_key_pressed(KeyCode::Enter)||started(ButtonId::Interact)
+            ||(w.player_near_portal()&&is_key_pressed(KeyCode::Up)),
     }
 }
