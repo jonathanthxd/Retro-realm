@@ -1,8 +1,8 @@
 # Retro Realm — Final Migration Update
 **Especificación de cierre Rust + Macroquad**  
 **Estado:** definición aprobable, NO implementación.  
-**Base auditada:** rama \`refactor/rust-macroquad-migration\`, después de Final Visual Polish v8.  
-**Fuente funcional de verdad:** \`Retro Realm.html\` en \`main\`.  
+**Base auditada:** rama `refactor/rust-macroquad-migration`, después de Final Visual Polish v8.  
+**Fuente funcional de verdad:** `Retro Realm.html` en `main`.  
 **Regla:** no fusionar PR #1 ni reemplazar el APK original hasta pasar todos los criterios P0 y la aceptación en Android real.
 
 ## Resumen
@@ -11,22 +11,22 @@ Esta fase no es un cuarto rediseño visual. Resuelve bloqueantes de la *experien
 
 ### Diagnóstico confirmado en el código actual
 
-1. \`ui_native::css_width()\` supone una altura lógica de 540 y mínimo de 960; el menú usa capturas DOM **fijas 960×540** y las centra. El HUD y los controles usan coordenadas exportadas de esa pantalla con anclajes puntuales. Esto no equivale a un layout responsive para 18:9, 20:9, recortes y ajustes del usuario. La impresión de HUD «4:3» en un teléfono debe medirse; no afirmar un formato intrínseco 4:3 sin una captura con geometría.
-2. \`main.rs\` crea un mundo \`virtual_width=round(180 * screen_width/screen_height)\` limitado a 320..480 y luego estira la textura a todo el framebuffer. Fuera del rango, o con recortes, puede deformar el mundo. \`controls.rs\` usa círculos táctiles de coordenadas codificadas y \`point * 3\` en algunos flujos; el layout mostrado y el hitbox no comparten una única fuente de verdad.
-3. \`ui_native.rs\` usa \`ui_pause_panel.png\` como pantalla visual, pero al dibujarla termina temprano; no es una UI interactiva. \`main.rs\` conecta Música y Sonidos al mismo \`audio_enabled\`; no hay mezclador, selección de estilos, arrastre y restablecimiento de controles.
-4. El nombre se puede editar con \`get_char_pressed()\` en PC, pero **no invoca el IME Android**. En el HTML \`#nm\` es un \`input maxlength="14"\` que guarda \`pq_name\` y usa «Jugador» si queda vacío.
-5. \`render.rs\` dibuja \`HAS CAIDO\` dentro del framebuffer de **180 px** y lo amplía a pantalla. El HTML original dice «HAS CAÍDO», muestra «Nivel n · Oro n» y «Toca para reiniciar», además de un overlay oscuro.
-6. El HTML guarda \`pq_name\`, \`pq_lv\` (**récord de nivel más alto**, NO nivel activo de sesión), \`pq_cls\`, \`pq_mv\`, \`pq_sv\`, \`pq_ms\`, \`pq_ctl\` y \`rr_sz\`. Rust todavía no los persiste. El código original ofrece escalas individuales **40–220 %** para controles y botones/joystick alternativos.
+1. `ui_native::css_width()` supone una altura lógica de 540 y mínimo de 960; el menú usa capturas DOM **fijas 960×540** y las centra. El HUD y los controles usan coordenadas exportadas de esa pantalla con anclajes puntuales. Esto no equivale a un layout responsive para 18:9, 20:9, recortes y ajustes del usuario. La impresión de HUD «4:3» en un teléfono debe medirse; no afirmar un formato intrínseco 4:3 sin una captura con geometría.
+2. `main.rs` crea un mundo `virtual_width=round(180 * screen_width/screen_height)` limitado a 320..480 y luego estira la textura a todo el framebuffer. Fuera del rango, o con recortes, puede deformar el mundo. `controls.rs` usa círculos táctiles de coordenadas codificadas y `point * 3` en algunos flujos; el layout mostrado y el hitbox no comparten una única fuente de verdad.
+3. `ui_native.rs` usa `ui_pause_panel.png` como pantalla visual, pero al dibujarla termina temprano; no es una UI interactiva. `main.rs` conecta Música y Sonidos al mismo `audio_enabled`; no hay mezclador, selección de estilos, arrastre y restablecimiento de controles.
+4. El nombre se puede editar con `get_char_pressed()` en PC, pero **no invoca el IME Android**. En el HTML `#nm` es un `input maxlength="14"` que guarda `pq_name` y usa «Jugador» si queda vacío.
+5. `render.rs` dibuja `HAS CAIDO` dentro del framebuffer de **180 px** y lo amplía a pantalla. El HTML original dice «HAS CAÍDO», muestra «Nivel n · Oro n» y «Toca para reiniciar», además de un overlay oscuro.
+6. El HTML guarda `pq_name`, `pq_lv` (**récord de nivel más alto**, NO nivel activo de sesión), `pq_cls`, `pq_mv`, `pq_sv`, `pq_ms`, `pq_ctl` y `rr_sz`. Rust todavía no los persiste. El código original ofrece escalas individuales **40–220 %** para controles y botones/joystick alternativos.
 7. Rust reproduce pistas OGG y SFX aproximados. En el HTML hay efectos WebAudio con sobres y música nocturna secuenciada, tres estilos musicales (Épica, Folk, Nocturna), volumen separado de música/SFX. No está certificada paridad auditiva.
 8. Cargo CI y la generación del APK prueban construcción, no jugabilidad, alcance táctil, FPS ni ciclo de vida Android en un teléfono físico.
 
 ## 1. Pantalla, densidad, proporciones y safe areas — P0
 
-**Nuevo módulo \`DisplayMetrics + LayoutEngine + WorldTransform\`**, utilizado por renderizador, UI y entrada táctil.
+**Nuevo módulo `DisplayMetrics + LayoutEngine + WorldTransform`**, utilizado por renderizador, UI y entrada táctil.
 
 * Entrada: píxeles reales del framebuffer; ancho/alto lógico reportados por Macroquad, DPI/densidad Android, orientación, área visible, recortes, insets de barras/gestos/teclado, preferencia de escala UI y control.
-* Macroquad expone \`screen_width\`, \`screen_height\` y \`screen_dpi_scale\`, pero para áreas seguras y teclado se debe añadir la información Android nativa cuando Macroquad no la provea.
-* Separar espacios: \`PhysicalPixels\`, \`LogicalDp\`, \`SafeViewport\`, \`WorldViewport\`, \`UiRect\`, \`TouchHitRect\`. Un solo transform compartido para dibujar y tocar; eliminar conversiones independientes \`*3\`, posiciones absolutos \`960\`, anclas ad hoc.
+* Macroquad expone `screen_width`, `screen_height` y `screen_dpi_scale`, pero para áreas seguras y teclado se debe añadir la información Android nativa cuando Macroquad no la provea.
+* Separar espacios: `PhysicalPixels`, `LogicalDp`, `SafeViewport`, `WorldViewport`, `UiRect`, `TouchHitRect`. Un solo transform compartido para dibujar y tocar; eliminar conversiones independientes `*3`, posiciones absolutos `960`, anclas ad hoc.
 * Mundo: conservar el estilo pixel-art y el framebuffer lógico de altura 180 cuando sea posible. Ajustar **ancho visible** al aspecto de la zona de juego, sin estirar X/Y con escalas distintas. Para casos extremos decidir de forma explícita entre vista ampliada y barras discretas; jamás deformar el sprite.
 * HUD: reconstruir la **disposición** desde recursos originales en elementos separados y anclados a la zona segura, no usar una sola captura fija estirada. Grupo superior izquierdo (retrato/HP/MP/nombre), indicadores de progreso y monedas en su zona correspondiente, pausa en zona segura, controles abajo a izquierda/derecha y menús centrados dentro de área visible.
 * En pantalla estrecha: layout compacto o reagrupación conservando identidad; no superponer HUD, recortes, textos o botones. En formato ultrapanorámico: aprovechar ancho adicional sin estirar arte. La UI no se debe deformar en tablets.
@@ -73,7 +73,7 @@ No se aceptan pantallas PNG que parezcan botones pero no respondan. Usar sprites
 
 ## 5. Overlay de derrota, mensajes y UI contextual — P0
 
-* Sacar de \`render.rs\` todas las interfaces que deban leerse nítidas tras el escalado retro: **derrota**, mensajes de jefe, avisos, indicaciones de cofres/portal, contador importante y cualquier texto que hoy se amplíe desde 180 px sin intención artística.
+* Sacar de `render.rs` todas las interfaces que deban leerse nítidas tras el escalado retro: **derrota**, mensajes de jefe, avisos, indicaciones de cofres/portal, contador importante y cualquier texto que hoy se amplíe desde 180 px sin intención artística.
 * La derrota debe conservar el contenido del HTML: «**HAS CAÍDO**», «**Nivel X · Oro Y**», «**Toca para reiniciar**» con fondo oscurecido; versión nativa a la misma resolución de la UI, con sombras y contornos legibles, tamaño adaptado a DPI/ratio.
 * Reiniciar con toque (superficie explícita), sin iniciar ataques por debajo del overlay. Mantener tecla R como atajo PC.
 * Mensajes de estado: nivel, jefe derrotado, daño, obtención de oro/gemas, «Próximamente» y condiciones de apertura de portales. Animaciones suaves, coherentes con estilo RetroPx y sin confundir mensajes con botones.
@@ -83,9 +83,9 @@ No se aceptan pantallas PNG que parezcan botones pero no respondan. Usar sprites
 
 ## 6. Guardado y compatibilidad de datos — P0
 
-* Modelo versionado de preferencias/usuario (\`schema_version\`) en almacenamiento privado Android. Guardar atómicamente (archivo temporal + reemplazo seguro), validar valores, recuperarse de archivo malformado, defaults sensatos; no guardar ni exponer datos privados fuera del sandbox.
-* Campos: \`player_name\`, \`best_level\`, \`selected_class\`, \`music_volume\`, \`sfx_volume\`, \`music_style\`, \`control_mode\`, \`control_size\` por ID, \`control_position\` relativa a safe area, \`hud_scale\`, \`text_scale\` y opciones básicas de pantalla.
-* Equivalencia con claves HTML: \`pq_name\`, \`pq_lv\`, \`pq_cls\`, \`pq_mv\`, \`pq_sv\`, \`pq_ms\`, \`pq_ctl\`, \`rr_sz\`. **No suponer** acceso directo a \`localStorage\` de otra aplicación/UID. Una migración explícita/importación solo si es técnica y legalmente viable; jamás sobrescribir la base original automáticamente.
+* Modelo versionado de preferencias/usuario (`schema_version`) en almacenamiento privado Android. Guardar atómicamente (archivo temporal + reemplazo seguro), validar valores, recuperarse de archivo malformado, defaults sensatos; no guardar ni exponer datos privados fuera del sandbox.
+* Campos: `player_name`, `best_level`, `selected_class`, `music_volume`, `sfx_volume`, `music_style`, `control_mode`, `control_size` por ID, `control_position` relativa a safe area, `hud_scale`, `text_scale` y opciones básicas de pantalla.
+* Equivalencia con claves HTML: `pq_name`, `pq_lv`, `pq_cls`, `pq_mv`, `pq_sv`, `pq_ms`, `pq_ctl`, `rr_sz`. **No suponer** acceso directo a `localStorage` de otra aplicación/UID. Una migración explícita/importación solo si es técnica y legalmente viable; jamás sobrescribir la base original automáticamente.
 * Guardar en confirmación y al abandonar pantallas; debouncing para arrastres, flush seguro al entrar en segundo plano; verificar que la partida en curso no se modifica cuando solo se guardan preferencias.
 * Asegurar compatibilidad de versiones nuevas del JSON. Una actualización APK con la misma identidad y firma debe mantener preferencias; una reinstalación limpia no está obligada a recuperarlas.
 
@@ -93,7 +93,7 @@ No se aceptan pantallas PNG que parezcan botones pero no respondan. Usar sprites
 
 ## 7. Audio de paridad + mezclador — P0
 
-* Comparar pista por pista el HTML y Rust. Música MP3 propia puede conservarse mediante OGG equivalente donde proceda; no asumir que el archivo \`bosque_nocturno.ogg\` replica el **secuenciador WebAudio** original.
+* Comparar pista por pista el HTML y Rust. Música MP3 propia puede conservarse mediante OGG equivalente donde proceda; no asumir que el archivo `bosque_nocturno.ogg` replica el **secuenciador WebAudio** original.
 * Portar música nocturna/estilos musicales con sus patrones, formas de onda, notas, tiempos y envolventes originales, o documentar equivalencia auditiva demostrada. La selección Épica/Folk/Nocturna ha de alterar el audio realmente.
 * SFX del HTML específicos por evento (salto, slash, golpe, habilidades por clase, dash, escudo, daño, muerte, nivel, cofre, portal, jefe) en vez de reutilizar tonos aproximados genéricos.
 * Control independiente de volumen de música y SFX y mute general; evitar sonido simultáneo viejo/nuevo durante transiciones. Audio focus del sistema: pausa/duck al recibir llamada, app background, volver; no reproducir en segundo plano involuntariamente.
@@ -114,7 +114,7 @@ No se aceptan pantallas PNG que parezcan botones pero no respondan. Usar sprites
 ## 9. Ciclo de vida Android, rendimiento y accesibilidad — P0
 
 * Arranque frío, volver desde Home/Recientes, bloquear/desbloquear, Android Atrás, rotación no deseada, cambio de enfoque, interrupción de audio y destrucción del proceso sin comportamientos corruptos. La orientación sigue **landscape**.
-* Evitar pérdida de eventos táctiles por \`TouchPhase::Cancelled\`, reinicializar estados al volver para que ningún botón quede presionado. Pausa al pasar a background; reanudar solo en acción esperada.
+* Evitar pérdida de eventos táctiles por `TouchPhase::Cancelled`, reinicializar estados al volver para que ningún botón quede presionado. Pausa al pasar a background; reanudar solo en acción esperada.
 * Mantener tick fijo 60 Hz independientemente de 30/60/90/120 Hz de pantalla. Instrumentar FPS, p95/p99 de frame time, carga y memoria sin usar estos datos para modificar gameplay.
 * Metas iniciales de aceptación (a medir, no promesas): **60 FPS objetivo** en gama media, **30 FPS sostenidos mínimo** en perfil de gama baja definido, sin cierres por memoria, congelamientos repetidos ni audio defectuoso. Si la GPU no alcanza, permitir reducir solo resolución/efectos del mundo manteniendo UI y tamaño táctil nativos.
 * Considerar fuentes de hasta 48 dp como objetivo táctil y contraste de texto; colores legibles y alta precisión de controles. No imponer una sensibilidad fija para todos los dispositivos.
@@ -124,7 +124,7 @@ No se aceptan pantallas PNG que parezcan botones pero no respondan. Usar sprites
 
 ## 10. Packaging, firma y cierre del PR — P0
 
-* Mantener \`com.pixelquest.game.preview\` mientras se prueba. La elección del package final depende de si se desea actualización sobre la app original o una instalación separada.
+* Mantener `com.pixelquest.game.preview` mientras se prueba. La elección del package final depende de si se desea actualización sobre la app original o una instalación separada.
 * Para upgrade in-place hace falta **mismo applicationId y clave de firma compatible**; si no, ofrecer una instalación paralela con mensaje claro (sin prometer conservación automática de datos del WebView).
 * Comprobar nombre/ícono definitivos, permisos estrictamente necesarios, Android manifest (landscape, fullscreen, insets/cutouts), compatibilidad ABI, versión y código de versión incrementales, firma de producción, APK reproducible por CI.
 * Revisar derechos/atribuciones de código, gráficos y música originales antes de redistribución pública, sin presumir licencia inexistente.
@@ -167,7 +167,7 @@ Todos los ítems son **bloqueantes P0**:
 2. Paisaje pixel art a resolución lógica retro y HUD/overlays/touch a resolución de pantalla.
 3. Los controles parten de perfil automático según densidad/safe area, siempre editables.
 4. Se conserva el comportamiento de nombre por defecto «Jugador», máximo 14 caracteres y nivel récord.
-5. La actualización no sustituye \`main\` ni borra la instalación original durante el QA.
+5. La actualización no sustituye `main` ni borra la instalación original durante el QA.
 
 ## Decisiones finales pendientes antes de publicar
 
