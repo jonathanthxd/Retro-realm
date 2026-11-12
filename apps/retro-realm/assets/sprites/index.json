@@ -53,6 +53,48 @@
     "ax": 18,
     "ay": 50
   },
+  "hero_0_9": {
+    "width": 42,
+    "height": 52,
+    "ax": 18,
+    "ay": 50
+  },
+  "hero_0_11": {
+    "width": 42,
+    "height": 52,
+    "ax": 18,
+    "ay": 50
+  },
+  "hero_idle_0_0": {
+    "width": 42,
+    "height": 52,
+    "ax": 18,
+    "ay": 50
+  },
+  "hero_idle_0_1": {
+    "width": 42,
+    "height": 52,
+    "ax": 18,
+    "ay": 50
+  },
+  "hero_idle_0_2": {
+    "width": 42,
+    "height": 52,
+    "ax": 18,
+    "ay": 50
+  },
+  "hero_idle_0_3": {
+    "width": 42,
+    "height": 52,
+    "ax": 18,
+    "ay": 50
+  },
+  "hero_cast_0": {
+    "width": 42,
+    "height": 52,
+    "ax": 18,
+    "ay": 50
+  },
   "hero_attack_0_0": {
     "width": 42,
     "height": 52,
@@ -125,6 +167,48 @@
     "ax": 18,
     "ay": 50
   },
+  "hero_1_9": {
+    "width": 42,
+    "height": 52,
+    "ax": 18,
+    "ay": 50
+  },
+  "hero_1_11": {
+    "width": 42,
+    "height": 52,
+    "ax": 18,
+    "ay": 50
+  },
+  "hero_idle_1_0": {
+    "width": 42,
+    "height": 52,
+    "ax": 18,
+    "ay": 50
+  },
+  "hero_idle_1_1": {
+    "width": 42,
+    "height": 52,
+    "ax": 18,
+    "ay": 50
+  },
+  "hero_idle_1_2": {
+    "width": 42,
+    "height": 52,
+    "ax": 18,
+    "ay": 50
+  },
+  "hero_idle_1_3": {
+    "width": 42,
+    "height": 52,
+    "ax": 18,
+    "ay": 50
+  },
+  "hero_cast_1": {
+    "width": 42,
+    "height": 52,
+    "ax": 18,
+    "ay": 50
+  },
   "hero_attack_1_0": {
     "width": 42,
     "height": 52,
@@ -192,6 +276,48 @@
     "ay": 50
   },
   "hero_2_8": {
+    "width": 42,
+    "height": 52,
+    "ax": 18,
+    "ay": 50
+  },
+  "hero_2_9": {
+    "width": 42,
+    "height": 52,
+    "ax": 18,
+    "ay": 50
+  },
+  "hero_2_11": {
+    "width": 42,
+    "height": 52,
+    "ax": 18,
+    "ay": 50
+  },
+  "hero_idle_2_0": {
+    "width": 42,
+    "height": 52,
+    "ax": 18,
+    "ay": 50
+  },
+  "hero_idle_2_1": {
+    "width": 42,
+    "height": 52,
+    "ax": 18,
+    "ay": 50
+  },
+  "hero_idle_2_2": {
+    "width": 42,
+    "height": 52,
+    "ax": 18,
+    "ay": 50
+  },
+  "hero_idle_2_3": {
+    "width": 42,
+    "height": 52,
+    "ax": 18,
+    "ay": 50
+  },
+  "hero_cast_2": {
     "width": 42,
     "height": 52,
     "ax": 18,
